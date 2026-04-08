@@ -25,7 +25,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ServiceInfo;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -77,6 +79,9 @@ public class UpdateService extends IntentService
   private static final int DOWNLOAD_COMPLETE_CODE = 1;
   private static final int CANCEL_CODE = 2;
   private static final String NOTIFICATION_CANCELLED = "org.csploit.android.services.UpdateService.CANCELLED";
+
+  private static final int PENDING_INTENT_FLAGS =
+      PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
 
   private boolean
           mRunning                    = false;
@@ -261,8 +266,25 @@ public class UpdateService extends IntentService
     // register our receiver
     registerReceiver(mReceiver,new IntentFilter(NOTIFICATION_CANCELLED));
     // set common notification actions
-    mBuilder.setDeleteIntent(PendingIntent.getBroadcast(this, CANCEL_CODE, new Intent(NOTIFICATION_CANCELLED), 0));
-    mBuilder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(), 0));
+    mBuilder.setDeleteIntent(PendingIntent.getBroadcast(this, CANCEL_CODE, new Intent(NOTIFICATION_CANCELLED), PENDING_INTENT_FLAGS));
+    mBuilder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(), PENDING_INTENT_FLAGS));
+  }
+
+  private void startForegroundForUpdate() {
+    if (mBuilder == null) {
+      return;
+    }
+    mBuilder.setContentTitle(getString(R.string.downloading_update))
+        .setContentText("")
+        .setSmallIcon(android.R.drawable.stat_sys_download)
+        .setProgress(100, 0, true)
+        .setOngoing(true)
+        .setChannelId(getBaseContext().getString(R.string.csploitChannelId));
+    ServiceCompat.startForeground(
+        this,
+        NOTIFICATION_ID,
+        mBuilder.build(),
+        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
   }
 
   /**
@@ -270,11 +292,16 @@ public class UpdateService extends IntentService
    * else assign it to the notification onClick
    */
   private void finishNotification() {
+    try {
+      ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH);
+    } catch (Throwable ignored) {
+    }
+
     boolean errorOccurred;
     Intent contentIntent;
 
-    errorOccurred = mCurrentTask.errorOccurred;
-    contentIntent = mCurrentTask.haveIntent() ? mCurrentTask.buildIntent() : null;
+    errorOccurred = mCurrentTask != null && mCurrentTask.errorOccurred;
+    contentIntent = (mCurrentTask != null && mCurrentTask.haveIntent()) ? mCurrentTask.buildIntent() : null;
 
     if(errorOccurred || contentIntent==null){
       Logger.debug("deleting notifications");
@@ -283,7 +310,7 @@ public class UpdateService extends IntentService
     } else {
       Logger.debug("assign '"+contentIntent.toString()+"' to notification");
      if(mBuilder!=null&&mNotificationManager!=null) {
-       mBuilder.setContentIntent(PendingIntent.getActivity(this, DOWNLOAD_COMPLETE_CODE, contentIntent, 0))
+       mBuilder.setContentIntent(PendingIntent.getActivity(this, DOWNLOAD_COMPLETE_CODE, contentIntent, PENDING_INTENT_FLAGS))
                .setChannelId(getBaseContext().getString(R.string.csploitChannelId));
        mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
      }
@@ -952,6 +979,7 @@ public class UpdateService extends IntentService
 
     try {
       setupNotification();
+      startForegroundForUpdate();
 
       mCurrentTask.errorOccurred = true;
       if (!haveLocalFile())

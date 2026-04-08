@@ -7,7 +7,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ServiceInfo;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 
 import org.csploit.android.R;
 import org.csploit.android.net.Network;
@@ -36,6 +38,9 @@ public class MultiAttackService extends IntentService {
   private static final int CANCEL_CODE = 1;
   private static final int CLICK_CODE = 2;
   private static final String NOTIFICATION_CANCELLED = "org.csploit.android.core.MultiAttackService.CANCELLED";
+
+  private static final int PENDING_INTENT_FLAGS =
+      PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
 
   private final static int TRACE    = 1;
   private final static int SCAN     = 2;
@@ -222,8 +227,8 @@ public class MultiAttackService extends IntentService {
     // register our receiver
     registerReceiver(mReceiver,new IntentFilter(NOTIFICATION_CANCELLED));
     // set common notification actions
-    mBuilder.setDeleteIntent(PendingIntent.getBroadcast(this, CANCEL_CODE, new Intent(NOTIFICATION_CANCELLED), 0));
-    mBuilder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(), 0));
+    mBuilder.setDeleteIntent(PendingIntent.getBroadcast(this, CANCEL_CODE, new Intent(NOTIFICATION_CANCELLED), PENDING_INTENT_FLAGS));
+    mBuilder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(), PENDING_INTENT_FLAGS));
   }
 
   /**
@@ -231,15 +236,32 @@ public class MultiAttackService extends IntentService {
    * else assign it to the notification onClick
    */
   private void finishNotification() {
+    try {
+      ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH);
+    } catch (Throwable ignored) {
+    }
+
+    if (mNotificationManager == null) {
+      if (mReceiver != null) {
+        try {
+          unregisterReceiver(mReceiver);
+        } catch (Throwable ignored) {
+        }
+        mReceiver = null;
+      }
+      mBuilder = null;
+      return;
+    }
+
     if(mContentIntent==null){
       Logger.debug("deleting notifications");
       mNotificationManager.cancel(NOTIFICATION_ID);
     } else {
       Logger.debug("assign '"+mContentIntent.toString()+"'to notification");
-      mBuilder.setContentIntent(PendingIntent.getActivity(this, CLICK_CODE, mContentIntent, 0))
+      mBuilder.setContentIntent(PendingIntent.getActivity(this, CLICK_CODE, mContentIntent, PENDING_INTENT_FLAGS))
               .setProgress(0,0,false)
               .setAutoCancel(true)
-              .setDeleteIntent(PendingIntent.getActivity(this, 0, new Intent(), 0))
+              .setDeleteIntent(PendingIntent.getActivity(this, 0, new Intent(), PENDING_INTENT_FLAGS))
               .setChannelId(getBaseContext().getString(R.string.csploitChannelId));
       mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
     }
@@ -303,7 +325,14 @@ public class MultiAttackService extends IntentService {
 
     mBuilder.setContentTitle(getString(R.string.multiple_attack))
             .setSmallIcon(R.drawable.ic_launcher)
-            .setProgress(100, 0, true);
+            .setProgress(100, 0, true)
+            .setOngoing(true)
+            .setChannelId(getBaseContext().getString(R.string.csploitChannelId));
+    ServiceCompat.startForeground(
+        this,
+        NOTIFICATION_ID,
+        mBuilder.build(),
+        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
 
     // create and start threads
     totalTargets = targets.length;

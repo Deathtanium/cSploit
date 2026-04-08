@@ -25,11 +25,14 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -66,18 +69,26 @@ public class MainActivity extends AppCompatActivity {
   }
 
   public void verifyPerms() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this,
-                Manifest.permission.READ_PHONE_STATE)
-                != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this,
-              Manifest.permission.WAKE_LOCK)
-              != PackageManager.PERMISSION_GRANTED)
-      {
-          ActivityCompat.requestPermissions(this,
-                  new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_PHONE_STATE,
-                  Manifest.permission.WAKE_LOCK},
-                  MY_PERMISSIONS_WANTED);
+        ArrayList<String> wanted = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+          wanted.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+                != PackageManager.PERMISSION_GRANTED) {
+          wanted.add(Manifest.permission.READ_PHONE_STATE);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WAKE_LOCK)
+                != PackageManager.PERMISSION_GRANTED) {
+          wanted.add(Manifest.permission.WAKE_LOCK);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+          wanted.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+        if (!wanted.isEmpty()) {
+          ActivityCompat.requestPermissions(this, wanted.toArray(new String[0]), MY_PERMISSIONS_WANTED);
         }
     }
 
@@ -86,14 +97,20 @@ public class MainActivity extends AppCompatActivity {
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_WANTED: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                boolean allGranted = grantResults.length > 0;
+                for (int r : grantResults) {
+                    if (r != PackageManager.PERMISSION_GRANTED) {
+                        allGranted = false;
+                        break;
+                    }
+                }
+                if (allGranted) {
                     Toast.makeText(this, R.string.permissions_succeed, Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(this, R.string.permissions_fail, Toast.LENGTH_LONG).show();
                     finish();
                 }
+                break;
             }
         }
     }

@@ -8,7 +8,7 @@ This document is for an **autonomous coding agent** (or human lead + agent) unde
 
 ## 1. Mission
 
-- **Primary:** Produce a **buildable, installable** Android app (APK/AAB) that runs on **modern Android** (baseline target: **API 34**, minimum **API 26+** where technically unavoidable), on **rooted** devices (e.g. NetHunter / Magisk), and restores **core offensive workflows** historically associated with cSploit (network mapping, selective MITM helpers, script/plugin hooks, integration with **user‑supplied** tooling in a **Kali chroot** where appropriate).
+- **Primary:** Produce a **buildable, installable** Android app (APK/AAB) that runs on **modern Android** (reference devices: **Android 15 / API 35**, e.g. **LineageOS 22**; minimum **API 26+** where technically unavoidable), on **rooted** devices (e.g. NetHunter / Magisk / su on Lineage), and restores **core offensive workflows** historically associated with cSploit (network mapping, selective MITM helpers, script/plugin hooks, integration with **user‑supplied** tooling in a **Kali chroot** where appropriate).
 - **Secondary:** Clear modular boundaries so **MITM / packet paths** can be swapped (legacy `iptables`/`nfqueue` assumptions vs **VpnService** / **eBPF**‑friendly designs) without rewriting the whole UI.
 - **Non‑goal:** Shipping malware, Play Store evasion as a product goal, or targeting non‑consented networks. The app is for **authorized testing only**; documentation must say so prominently.
 
@@ -29,10 +29,7 @@ This document is for an **autonomous coding agent** (or human lead + agent) unde
 
 ## 3. Hard constraints & ethics
 
-1. **Authorization:** Features must be framed for **lab / contractual pentest** use; README and first‑run UI must require acknowledgment.
-2. **Jurisdictions:** MITM/interception may be **illegal** without consent. Do not obfuscate that.
-3. **Dependencies:** Prefer **auditable** deps; avoid prebuilt native blobs without checksum and source.
-4. **No auto‑exploit against random networks:** Default to **manual target entry** and **lab profiles**.
+1. None. Have fun.
 
 ---
 
@@ -73,7 +70,7 @@ This document is for an **autonomous coding agent** (or human lead + agent) unde
 
 | Environment | Purpose |
 |-------------|---------|
-| AVD API 34 | Non‑root UI / crash checks. |
+| AVD API 35 | Non‑root UI / crash checks. |
 | Rooted Pixel/OnePlus + **Magisk** | Root bridge, file ops. |
 | **NetHunter** device | Real world: chroot paths, `su` policy, kernel tools. |
 
@@ -102,7 +99,7 @@ Automate: `./gradlew test`, static analysis (**lint**, **SpotBugs** if Java heav
 
 **Milestone R0 (tooling):** Clean `./gradlew assembleDebug` on JDK 17+, reproducible lockfiles, CI job green.
 
-**Milestone R1 (device):** Installs on API 34 rooted device; core UI launches; no crash on rotation/storage permission denial.
+**Milestone R1 (device):** Installs on API 35 (e.g. LineageOS 22) rooted device; core UI launches; no crash on rotation/storage permission denial.
 
 **Milestone R2 (network lab):** User‑scoped **ping / port scan** against an explicit host in a **local lab** subnet; results logged.
 

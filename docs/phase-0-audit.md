@@ -65,12 +65,13 @@ Date: 2026-04-08. Upstream snapshot: [cSploit/android](https://github.com/cSploi
 
 - `./gradlew assembleDebug` **did not run to completion**: host has JDK **21**; Gradle **4.10.2** starts, but the project requires **`ANDROID_HOME` / `local.properties` `sdk.dir`** (Android SDK not configured in this environment). Phase 1 should document SDK/JDK expectations (often JDK 17 + API 34 platform for modern AGP).
 
-## Phase 1 (build hygiene) — applied 2026-04-08
+## Phase 1 (build hygiene) — applied 2026-04-08 (updated for API 35 / Android 15)
 
-- **Gradle 8.7**, **AGP 8.6.1**, `settings.gradle` with `pluginManagement` + `dependencyResolutionManagement` (Google + Maven Central; **jcenter removed**).
-- **`compileSdk` / `targetSdk` 34**, **`minSdk` 26**, `namespace` in Gradle; manifest **`package` removed** (namespace-only).
+- **Gradle 8.9**, **AGP 8.7.x**; `settings.gradle` with `pluginManagement` + `dependencyResolutionManagement` (Google + Maven Central; **jcenter removed**).
+- **`compileSdk` / `targetSdk` 35** (Android 15; **LineageOS 22** class devices), **`minSdk` 26**, `namespace` in Gradle; manifest **`package` removed** (namespace-only).
 - **`android.nonFinalResIds=false`** so legacy `switch (R.id…)` / `switch (R.string…)` still compiles.
-- **Manifest**: `android:exported` on all activities/services; **`usesCleartextTraffic`** (interim; replace with targeted network security config in Phase 2); **`POST_NOTIFICATIONS`** for crash notifications on API 33+.
+- **Manifest**: `android:exported` on all activities/services; **`usesCleartextTraffic`** (interim; replace with targeted network security config in Phase 2); **`POST_NOTIFICATIONS`**; **`FOREGROUND_SERVICE`** + **`FOREGROUND_SERVICE_DATA_SYNC`**; **`UpdateService`** / **`MultiAttackService`** use **`foregroundServiceType="dataSync"`** with **`ServiceCompat.startForeground`** + immutable **`PendingIntent`** flags (Android 12–15).
+- **Runtime**: **`MainActivity`** requests **`POST_NOTIFICATIONS`** on API 33+ (required for update / multi-attack notifications).
 - **HijackerWebView**: removed **`setAppCacheEnabled`** (removed from API 33).
 - **Tests**: `NetworkHelperTest` no longer uses **`getLocalHost()`** (sandbox-safe).
 - **Verify**: `./gradlew assembleDebug` and `./gradlew test` succeed (JDK 21 on host; Java 8 source/target retained for now).
