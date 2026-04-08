@@ -28,6 +28,9 @@ us.stackdump*
 # Local configuration file (sdk path, etc)
 local.properties
 
+# Project-local Android SDK (cmdline-tools + platforms; not vendored)
+android-sdk/
+
 *.pydevproject
 .project
 .metadata/
