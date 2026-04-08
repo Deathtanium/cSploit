@@ -25,8 +25,10 @@ public class NetworkHelperTest extends TestCase {
   public void testComapreInetAddress() throws Exception {
     InetAddress a, b;
 
-    a = InetAddress.getLocalHost();
-    b = InetAddress.getByAddress("127.0.0.1", new byte[] {127, 0, 0, 1});
+    // Avoid InetAddress.getLocalHost(): needs resolvable hostname (fails in minimal CI / sandboxes).
+    byte[] loopback = new byte[] {127, 0, 0, 1};
+    a = InetAddress.getByAddress("127.0.0.1", loopback);
+    b = InetAddress.getByAddress("127.0.0.1", loopback.clone());
 
     assertThat(a, is(b));
 
