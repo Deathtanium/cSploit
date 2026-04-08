@@ -1,6 +1,10 @@
-# cSploit is now considered EOL and is not being updated by the developers. Current version might not be functional on newer Android versions. We appreciate everyone who contributed to cSploit over the years. 
+# cSploit is now considered EOL and is not being updated by the developers. Current version might not be functional on newer Android versions. We appreciate everyone who contributed to cSploit over the years.
 
+## Revival fork (this repository)
 
+This tree is an **independent fork** for a **modern Android port** (see root `AGENTS.md`). Git remote **`upstream`** points at the archived [cSploit/android](https://github.com/cSploit/android) repository; add your own `origin` when you publish a fork. Work is organized in phases (audit → Gradle/target SDK → runtime → MITM). Use only on networks you own or are explicitly authorized to test.
+
+---
 
 # cSploit: Android network pentesting suite
 
