@@ -27,14 +27,21 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.text.HtmlCompat;
+import androidx.preference.PreferenceManager;
+
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+
+  private static final String PREF_LAB_USE_ACK_V1 = "PREF_LAB_USE_ACK_V1";
 
   MainFragment f;
   final static int MY_PERMISSIONS_WANTED = 1;
@@ -42,20 +49,47 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
+    if (themePrefs.getBoolean("isDark", false)) {
+      setTheme(R.style.DarkTheme);
+    } else {
+      setTheme(R.style.AppTheme);
+    }
+
+    if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean(PREF_LAB_USE_ACK_V1, false)) {
+      showLabAcknowledgmentDialog(savedInstanceState);
+      return;
+    }
+
+    startMainExperience(savedInstanceState);
+  }
+
+  private void showLabAcknowledgmentDialog(final Bundle savedInstanceState) {
+    new AlertDialog.Builder(this)
+        .setTitle(R.string.lab_ack_title)
+        .setMessage(HtmlCompat.fromHtml(getString(R.string.csploit_disclaimer), HtmlCompat.FROM_HTML_MODE_LEGACY))
+        .setCancelable(false)
+        .setPositiveButton(R.string.lab_ack_accept, (d, which) -> {
+          PreferenceManager.getDefaultSharedPreferences(MainActivity.this)
+              .edit()
+              .putBoolean(PREF_LAB_USE_ACK_V1, true)
+              .apply();
+          startMainExperience(savedInstanceState);
+        })
+        .setNegativeButton(R.string.exit, (d, which) -> finish())
+        .show();
+  }
+
+  private void startMainExperience(Bundle savedInstanceState) {
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
       NotificationChannel mChannel = new NotificationChannel(getString(R.string.csploitChannelId),
-              getString(R.string.cSploitChannelDescription), NotificationManager.IMPORTANCE_DEFAULT);
+          getString(R.string.cSploitChannelDescription), NotificationManager.IMPORTANCE_DEFAULT);
       NotificationManager mNotificationManager =
-              (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+          (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
       if (mNotificationManager != null) {
-          mNotificationManager.createNotificationChannel(mChannel);
+        mNotificationManager.createNotificationChannel(mChannel);
       }
     }
-    SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
-    if (themePrefs.getBoolean("isDark", false))
-      setTheme(R.style.DarkTheme);
-    else
-      setTheme(R.style.AppTheme);
     setContentView(R.layout.main);
     if (findViewById(R.id.mainframe) != null) {
       if (savedInstanceState != null) {
@@ -63,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
       }
       f = new MainFragment();
       getSupportFragmentManager().beginTransaction()
-              .add(R.id.mainframe, f).commit();
+          .add(R.id.mainframe, f).commit();
     }
     verifyPerms();
   }

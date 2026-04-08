@@ -24,7 +24,6 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import android.view.LayoutInflater;
@@ -72,6 +71,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Hijacker extends AppCompatActivity {
 	private ToggleButton mHijackToggleButton = null;
@@ -113,125 +114,104 @@ public class Hijacker extends AppCompatActivity {
 	public class SessionListAdapter extends ArrayAdapter<Session> {
 		private int mLayoutId = 0;
 		private HashMap<String, Session> mSessions = null;
+		private final ExecutorService mEnrichExecutor = Executors.newSingleThreadExecutor();
 
-		public class FacebookUserTask extends AsyncTask<Session, Void, Boolean> {
-			private Bitmap getUserImage(String uri) {
-				Bitmap image = null;
-				try {
-					URL url = new URL(uri);
-					URLConnection conn = url.openConnection();
-					conn.connect();
-
-					InputStream input = conn.getInputStream();
-					BufferedInputStream reader = new BufferedInputStream(input);
-
-					image = Bitmap.createScaledBitmap(
-							BitmapFactory.decodeStream(reader), 48, 48, false);
-
-					reader.close();
-					input.close();
-				} catch (IOException e) {
-					System.errorLogging(e);
-				}
-
-				return image;
-			}
-
-			private String getUserName(String uri) {
-				String username = null;
-
-				try {
-					URL url = new URL(uri);
-					URLConnection conn = url.openConnection();
-					conn.connect();
-
-					InputStream input = conn.getInputStream();
-					BufferedReader reader = new BufferedReader(
-							new InputStreamReader(input));
-					String line;
-					final StringBuilder dataBuilder = new StringBuilder();
-					while ((line = reader.readLine()) != null)
-						dataBuilder.append(line);
-
-					reader.close();
-					input.close();
-
-					JSONObject response = new JSONObject(dataBuilder.toString());
-
-					username = response.getString("name");
-				} catch (Exception e) {
-					System.errorLogging(e);
-				}
-
-				return username;
-			}
-
-			@Override
-			protected Boolean doInBackground(Session... sessions) {
-				Session session = sessions[0];
-				HttpCookie user = session.mCookies.get("c_user");
-
-				if (user != null) {
-					String fbUserId = user.getValue(), fbGraphUrl = "https://graph.facebook.com/"
-							+ fbUserId + "/", fbPictureUrl = fbGraphUrl
-							+ "picture";
-
-					session.mUserName = getUserName(fbGraphUrl);
-					session.mPicture = getUserImage(fbPictureUrl);
-				}
-
-				return true;
-			}
-
-			@Override
-			protected void onPostExecute(Boolean result) {
-				mAdapter.notifyDataSetChanged();
-			}
+		void shutdownEnrichExecutor() {
+			mEnrichExecutor.shutdownNow();
 		}
 
-		public class XdaUserTask extends AsyncTask<Session, Void, Boolean> {
-			private Bitmap getUserImage(String uri) {
-				Bitmap image = null;
-				try {
-					URL url = new URL(uri);
-					URLConnection conn = url.openConnection();
-					conn.connect();
+		private Bitmap loadScaledAvatar(String uri) {
+			Bitmap image = null;
+			try {
+				URL url = new URL(uri);
+				URLConnection conn = url.openConnection();
+				conn.connect();
+				InputStream input = conn.getInputStream();
+				BufferedInputStream reader = new BufferedInputStream(input);
+				image = Bitmap.createScaledBitmap(
+						BitmapFactory.decodeStream(reader), 48, 48, false);
+				reader.close();
+				input.close();
+			} catch (IOException e) {
+				System.errorLogging(e);
+			}
+			return image;
+		}
 
-					InputStream input = conn.getInputStream();
-					BufferedInputStream reader = new BufferedInputStream(input);
-
-					image = Bitmap.createScaledBitmap(
-							BitmapFactory.decodeStream(reader), 48, 48, false);
-
-					reader.close();
-					input.close();
-				} catch (IOException e) {
-					System.errorLogging(e);
+		private String fetchFacebookDisplayName(String graphProfileUrl) {
+			String username = null;
+			try {
+				URL url = new URL(graphProfileUrl);
+				URLConnection conn = url.openConnection();
+				conn.connect();
+				InputStream input = conn.getInputStream();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+				String line;
+				final StringBuilder dataBuilder = new StringBuilder();
+				while ((line = reader.readLine()) != null) {
+					dataBuilder.append(line);
 				}
-
-				return image;
+				reader.close();
+				input.close();
+				JSONObject response = new JSONObject(dataBuilder.toString());
+				username = response.getString("name");
+			} catch (Exception e) {
+				System.errorLogging(e);
 			}
+			return username;
+		}
 
-			@Override
-			protected Boolean doInBackground(Session... sessions) {
-				Session session = sessions[0];
-				HttpCookie userid = session.mCookies.get("bbuserid"), username = session.mCookies
-						.get("xda_wikiUserName");
+		private void scheduleFacebookEnrich(final Session session) {
+			mEnrichExecutor.execute(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						HttpCookie user = session.mCookies.get("c_user");
+						if (user != null) {
+							String fbUserId = user.getValue();
+							String fbGraphUrl = "https://graph.facebook.com/" + fbUserId + "/";
+							session.mUserName = fetchFacebookDisplayName(fbGraphUrl);
+							session.mPicture = loadScaledAvatar(fbGraphUrl + "picture");
+						}
+					} catch (Exception e) {
+						System.errorLogging(e);
+					}
+					Hijacker.this.runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							SessionListAdapter.this.notifyDataSetChanged();
+						}
+					});
+				}
+			});
+		}
 
-				if (userid != null)
-					session.mPicture = getUserImage("http://media.xda-developers.com/customavatars/avatar"
-							+ userid.getValue() + "_1.gif");
-
-				if (username != null)
-					session.mUserName = username.getValue().toLowerCase();
-
-				return true;
-			}
-
-			@Override
-			protected void onPostExecute(Boolean result) {
-				mAdapter.notifyDataSetChanged();
-			}
+		private void scheduleXdaEnrich(final Session session) {
+			mEnrichExecutor.execute(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						HttpCookie userid = session.mCookies.get("bbuserid");
+						HttpCookie username = session.mCookies.get("xda_wikiUserName");
+						if (userid != null) {
+							session.mPicture = loadScaledAvatar(
+									"http://media.xda-developers.com/customavatars/avatar"
+											+ userid.getValue() + "_1.gif");
+						}
+						if (username != null) {
+							session.mUserName = username.getValue().toLowerCase();
+						}
+					} catch (Exception e) {
+						System.errorLogging(e);
+					}
+					Hijacker.this.runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							SessionListAdapter.this.notifyDataSetChanged();
+						}
+					});
+				}
+			});
 		}
 
 		public class SessionHolder {
@@ -315,12 +295,12 @@ public class Hijacker extends AppCompatActivity {
 				session.mInited = true;
 
 				if (session.mDomain.contains("facebook.")
-						&& session.mCookies.get("c_user") != null)
-					new FacebookUserTask().execute(session);
-
-				else if (session.mDomain.contains("xda-developers.")
-						&& session.mCookies.get("bbuserid") != null)
-					new XdaUserTask().execute(session);
+						&& session.mCookies.get("c_user") != null) {
+					scheduleFacebookEnrich(session);
+				} else if (session.mDomain.contains("xda-developers.")
+						&& session.mCookies.get("bbuserid") != null) {
+					scheduleXdaEnrich(session);
+				}
 			}
 
 			Bitmap picture;
@@ -616,6 +596,14 @@ public class Hijacker extends AppCompatActivity {
 		default:
 			return super.onOptionsItemSelected(item);
 		}
+	}
+
+	@Override
+	protected void onDestroy() {
+		if (mAdapter != null) {
+			mAdapter.shutdownEnrichExecutor();
+		}
+		super.onDestroy();
 	}
 
 	@Override

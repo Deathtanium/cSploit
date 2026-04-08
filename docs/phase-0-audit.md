@@ -27,8 +27,7 @@ Date: 2026-04-08. Upstream snapshot: [cSploit/android](https://github.com/cSploi
 
 ### `AsyncTask`
 
-- `plugins/mitm/hijacker/Hijacker.java` — `FacebookUserTask`, `XdaUserTask`
-- `plugins/mitm/MITM.java` — `CheckForOpenPortsTask`
+- **Removed (revival):** session enrichment in **`Hijacker`** uses **`ExecutorService`** + **`runOnUiThread`**; **`MITM`** port check uses a **background `Thread`** + **`runOnUiThread`**.
 
 ### `IntentService`
 
@@ -82,9 +81,14 @@ Date: 2026-04-08. Upstream snapshot: [cSploit/android](https://github.com/cSploi
 - **`WRITE_EXTERNAL_STORAGE`** limited to **`maxSdkVersion="32"`**; **`MainActivity`** only requests it on **API ≤ 32** (app-scoped paths need no broad storage grant on Android 13+).
 - **`network_security_config.xml`**: documents cleartext for lab use; application references it (**`usesCleartextTraffic`** removed as redundant). Narrow per-domain / lab-toggle later.
 
+## Phase 2 (continued) — lab acknowledgment & AsyncTask removal — 2026-04-08
+
+- **First launch:** **`MainActivity`** shows non-cancelable **`AlertDialog`** with **`csploit_disclaimer`**; accepting sets **`PREF_LAB_USE_ACK_V1`** in default prefs, then **`Exit`** closes the app. Strings: **`lab_ack_title`**, **`lab_ack_accept`**.
+- **MITM / Hijacker:** no remaining **`AsyncTask`** in those flows (see audit note above).
+
 ## Next steps (Phase 2+)
 
-- Migrate `IntentService` → `WorkManager` + foreground service where needed; `AsyncTask` → coroutines / executors.
+- Migrate `IntentService` → `WorkManager` + foreground service where needed (updates / multi-attack).
 - **SAF** for user-exported pcap/logs; optional **MANAGE_EXTERNAL_STORAGE** doc-only path for power users choosing arbitrary dirs.
 - Ethics / lab acknowledgment in UI (per mission).
 - Raise **Java language level** / toolchain once code is ready (AGP warns on source/target 8 under JDK 21).

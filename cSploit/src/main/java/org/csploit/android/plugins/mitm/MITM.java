@@ -25,7 +25,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore.MediaColumns;
@@ -311,49 +310,44 @@ public class MITM extends Plugin
         }
       }
     } else if(request == SettingsFragment.SETTINGS_DONE){
-      new CheckForOpenPortsTask().execute();
+      checkForOpenPortsAsync();
     }
   }
 
-  public class CheckForOpenPortsTask extends AsyncTask<Void, Void, Boolean>{
-    private String mMessage = null;
-
-    @Override
-    protected Boolean doInBackground(Void... dummy){
-            /*
-             * Check if needed ports are available, otherwise inform the user.
-	         */
-      if(System.isPortAvailable(System.HTTP_PROXY_PORT) == false)
-        mMessage = getString(R.string.the_port) + System.HTTP_PROXY_PORT + getString(R.string.error_proxy_port);
-
-      else if(System.isPortAvailable(System.HTTP_SERVER_PORT) == false)
-        mMessage = getString(R.string.the_port) + System.HTTP_SERVER_PORT + getString(R.string.error_mitm_port);
-
-      else if(System.getSettings().getBoolean("PREF_HTTPS_REDIRECT", true) && System.isPortAvailable(System.HTTPS_REDIR_PORT) == false)
-        mMessage = getString(R.string.the_port) + System.HTTPS_REDIR_PORT + getString(R.string.error_https_port);
-
-      else
-        mMessage = null;
-
-      return true;
-    }
-
-    @Override
-    protected void onPostExecute(Boolean result){
-      if(mMessage != null){
-        new ConfirmDialog( getString(R.string.warning), mMessage, MITM.this, new ConfirmDialogListener(){
+  private void checkForOpenPortsAsync() {
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        String msg = null;
+        if (System.isPortAvailable(System.HTTP_PROXY_PORT) == false) {
+          msg = getString(R.string.the_port) + System.HTTP_PROXY_PORT + getString(R.string.error_proxy_port);
+        } else if (System.isPortAvailable(System.HTTP_SERVER_PORT) == false) {
+          msg = getString(R.string.the_port) + System.HTTP_SERVER_PORT + getString(R.string.error_mitm_port);
+        } else if (System.getSettings().getBoolean("PREF_HTTPS_REDIRECT", true)
+            && System.isPortAvailable(System.HTTPS_REDIR_PORT) == false) {
+          msg = getString(R.string.the_port) + System.HTTPS_REDIR_PORT + getString(R.string.error_https_port);
+        }
+        final String mMessage = msg;
+        runOnUiThread(new Runnable() {
           @Override
-          public void onConfirm(){
-            startActivityForResult(new Intent(MITM.this, SettingsActivity.class), SettingsFragment.SETTINGS_DONE);
-          }
+          public void run() {
+            if (mMessage != null) {
+              new ConfirmDialog(getString(R.string.warning), mMessage, MITM.this, new ConfirmDialogListener() {
+                @Override
+                public void onConfirm() {
+                  startActivityForResult(new Intent(MITM.this, SettingsActivity.class), SettingsFragment.SETTINGS_DONE);
+                }
 
-          @Override
-          public void onCancel(){
-            new FinishDialog(getString(R.string.error), getString(R.string.error_mitm_ports), MITM.this).show();
+                @Override
+                public void onCancel() {
+                  new FinishDialog(getString(R.string.error), getString(R.string.error_mitm_ports), MITM.this).show();
+                }
+              }).show();
+            }
           }
-        }).show();
+        });
       }
-    }
+    }, "mitm-port-check").start();
   }
 
   private void setSpoofErrorState(final String error){
@@ -410,7 +404,7 @@ public class MITM extends Plugin
 			setTheme(R.style.AppTheme);
     super.onCreate(savedInstanceState);
 
-    new CheckForOpenPortsTask().execute();
+    checkForOpenPortsAsync();
 
     mActionListView = (ListView) findViewById(R.id.actionListView);
     mActionAdapter = new ActionAdapter(R.layout.plugin_mitm_list_item, mActions);
