@@ -70,7 +70,8 @@ public class MainActivity extends AppCompatActivity {
 
   public void verifyPerms() {
         ArrayList<String> wanted = new ArrayList<>();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
           wanted.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }

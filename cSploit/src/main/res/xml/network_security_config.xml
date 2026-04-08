@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+      Cleartext is still required for many lab workflows (HTTP on LAN, legacy URLs in strings).
+      Replace with domain-specific rules + optional "lab mode" toggles when hardening (AGENTS.md).
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

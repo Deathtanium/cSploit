@@ -24,7 +24,6 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -34,6 +33,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import org.csploit.android.R;
+import org.csploit.android.core.System;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class DirectoryPicker extends ListActivity{
     String preferredStartDir = null;
 
     Bundle extras = getIntent().getExtras();
-    dir = Environment.getExternalStorageDirectory();
+    dir = System.getDefaultSaveDirectory(getApplicationContext());
 
     if(extras != null){
       preferredStartDir = extras.getString(START_DIR);

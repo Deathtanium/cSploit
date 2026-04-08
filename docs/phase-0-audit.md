@@ -76,8 +76,15 @@ Date: 2026-04-08. Upstream snapshot: [cSploit/android](https://github.com/cSploi
 - **Tests**: `NetworkHelperTest` no longer uses **`getLocalHost()`** (sandbox-safe).
 - **Verify**: `./gradlew assembleDebug` and `./gradlew test` succeed (JDK 21 on host; Java 8 source/target retained for now).
 
+## Phase 2 (partial) — scoped storage & network policy — 2026-04-08
+
+- Default **`PREF_SAVE_PATH`** / **`DirectoryPicker`** root: **`Context.getExternalFilesDir(null)`** (fallback **`getFilesDir()`**), via **`System.getDefaultSaveDirectory()`**. Debug error log file uses the same tree when **`PREF_DEBUG_ERROR_LOGGING`** is on.
+- **`WRITE_EXTERNAL_STORAGE`** limited to **`maxSdkVersion="32"`**; **`MainActivity`** only requests it on **API ≤ 32** (app-scoped paths need no broad storage grant on Android 13+).
+- **`network_security_config.xml`**: documents cleartext for lab use; application references it (**`usesCleartextTraffic`** removed as redundant). Narrow per-domain / lab-toggle later.
+
 ## Next steps (Phase 2+)
 
 - Migrate `IntentService` → `WorkManager` + foreground service where needed; `AsyncTask` → coroutines / executors.
-- Scoped storage for saves; **network security config** (narrow cleartext); ethics / lab acknowledgment in UI (per mission).
+- **SAF** for user-exported pcap/logs; optional **MANAGE_EXTERNAL_STORAGE** doc-only path for power users choosing arbitrary dirs.
+- Ethics / lab acknowledgment in UI (per mission).
 - Raise **Java language level** / toolchain once code is ready (AGP warns on source/target 8 under JDK 21).

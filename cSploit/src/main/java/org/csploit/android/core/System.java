@@ -150,11 +150,27 @@ public class System {
 
   private final static LinkedList<SettingReceiver> mSettingReceivers = new LinkedList<SettingReceiver>();
 
+  /**
+   * App-specific storage (no legacy storage permission on modern Android). Suitable for cores, MSF trees, exports.
+   */
+  public static File getDefaultSaveDirectory(Context context) {
+    Context app = context.getApplicationContext();
+    File ext = app.getExternalFilesDir(null);
+    if (ext != null) {
+      return ext;
+    }
+    return app.getFilesDir();
+  }
+
+  public static String getDefaultSavePath(Context context) {
+    return getDefaultSaveDirectory(context).getAbsolutePath();
+  }
+
   public static void init(Context context) throws Exception {
     mContext = context;
     try {
       Logger.debug("initializing System...");
-      mStoragePath = getSettings().getString("PREF_SAVE_PATH", Environment.getExternalStorageDirectory().toString());
+      mStoragePath = getSettings().getString("PREF_SAVE_PATH", getDefaultSavePath(context));
       mSessionName = "csploit-session-" + java.lang.System.currentTimeMillis();
       mKnownIssues = new KnownIssues();
       mPlugins = new ArrayList<>();
@@ -441,9 +457,14 @@ public class System {
   }
 
   public static synchronized void errorLogging(Throwable e) {
+    File logDir = mContext != null ? getDefaultSaveDirectory(mContext) : null;
+    if (logDir == null) {
+      File legacy = Environment.getExternalStorageDirectory();
+      logDir = legacy != null ? legacy : new File(".");
+    }
     String message = "Unknown error.",
             trace = "Unknown trace.",
-            filename = (new File(Environment.getExternalStorageDirectory().toString(), ERROR_LOG_FILENAME)).getAbsolutePath();
+            filename = new File(logDir, ERROR_LOG_FILENAME).getAbsolutePath();
 
     if (e != null) {
       if (e.getMessage() != null && !e.getMessage().isEmpty())
