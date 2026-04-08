@@ -18,14 +18,19 @@
  */
 package org.csploit.android.services;
 
-import android.app.IntentService;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 
@@ -65,7 +70,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.concurrent.CancellationException;
 
-public class UpdateService extends IntentService
+public class UpdateService extends Service
 {
   // Intent defines
   public static final String START    = "UpdateService.action.START";
@@ -96,9 +101,12 @@ public class UpdateService extends IntentService
   private NotificationCompat.Builder mBuilder = null;
   private BroadcastReceiver mReceiver = null;
 
-  public UpdateService(){
-    super("UpdateService");
-    // prepare error receiver
+  private HandlerThread workerThread;
+  private Handler workerHandler;
+
+  @Override
+  public void onCreate() {
+    super.onCreate();
     mErrorReceiver = new Raw.RawReceiver() {
       @Override
       public void onStart(String command) {
@@ -126,6 +134,34 @@ public class UpdateService extends IntentService
         mErrorOutput.append(exitCode);
       }
     };
+    workerThread = new HandlerThread("UpdateService");
+    workerThread.start();
+    workerHandler = new Handler(workerThread.getLooper());
+  }
+
+  @Override
+  public int onStartCommand(@Nullable Intent intent, int flags, final int startId) {
+    if (intent == null) {
+      return START_NOT_STICKY;
+    }
+    final Intent workIntent = intent;
+    workerHandler.post(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          handleUpdateIntent(workIntent);
+        } finally {
+          stopSelf(startId);
+        }
+      }
+    });
+    return START_NOT_STICKY;
+  }
+
+  @Nullable
+  @Override
+  public IBinder onBind(Intent intent) {
+    return null;
   }
 
   /**
@@ -965,8 +1001,7 @@ public class UpdateService extends IntentService
     }
   }
 
-  @Override
-  protected void onHandleIntent(Intent intent) {
+  private void handleUpdateIntent(Intent intent) {
     mCurrentTask = (Update) intent.getSerializableExtra(UPDATE);
     boolean exitForError=true;
 
@@ -1018,7 +1053,6 @@ public class UpdateService extends IntentService
         if(!(mCurrentTask instanceof CoreUpdate))
           wipe();
       }
-      stopSelf();
       mRunning = false;
     }
   }
@@ -1026,6 +1060,9 @@ public class UpdateService extends IntentService
   @Override
   public void onDestroy() {
     finishNotification();
+    if (workerThread != null) {
+      workerThread.quitSafely();
+    }
     super.onDestroy();
   }
 }

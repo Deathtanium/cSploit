@@ -1,13 +1,18 @@
 package org.csploit.android.core;
 
-import android.app.IntentService;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 
@@ -29,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Service for attack multiple targets in background
  */
-public class MultiAttackService extends IntentService {
+public class MultiAttackService extends Service {
 
   public final static String MULTI_ACTIONS = "MultiAttackService.data.actions";
   public final static String MULTI_TARGETS = "MultiAttackService.data.targets";
@@ -56,9 +61,40 @@ public class MultiAttackService extends IntentService {
   private int totalTargets;
   private int completedTargets;
 
+  private HandlerThread workerThread;
+  private Handler workerHandler;
 
-  public MultiAttackService() {
-    super("MultiAttackService");
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    workerThread = new HandlerThread("MultiAttackService");
+    workerThread.start();
+    workerHandler = new Handler(workerThread.getLooper());
+  }
+
+  @Override
+  public int onStartCommand(@Nullable Intent intent, int flags, final int startId) {
+    if (intent == null) {
+      return START_NOT_STICKY;
+    }
+    final Intent workIntent = intent;
+    workerHandler.post(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          handleMultiAttackIntent(workIntent);
+        } finally {
+          stopSelf(startId);
+        }
+      }
+    });
+    return START_NOT_STICKY;
+  }
+
+  @Nullable
+  @Override
+  public IBinder onBind(Intent intent) {
+    return null;
   }
 
   private class SingleWorker implements Runnable {
@@ -272,8 +308,7 @@ public class MultiAttackService extends IntentService {
     mNotificationManager  = null;
   }
 
-  @Override
-  protected void onHandleIntent(Intent intent) {
+  private void handleMultiAttackIntent(Intent intent) {
     int[] actions,targetsIndex;
     int i;
     ExecutorService executorService;
@@ -355,14 +390,15 @@ public class MultiAttackService extends IntentService {
 
     executorService.shutdownNow();
 
-    stopSelf();
-
     mRunning = false;
   }
 
   @Override
   public void onDestroy() {
     finishNotification();
+    if (workerThread != null) {
+      workerThread.quitSafely();
+    }
     super.onDestroy();
   }
 }
