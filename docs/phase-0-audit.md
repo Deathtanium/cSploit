@@ -89,9 +89,13 @@ Date: 2026-04-08. Upstream snapshot: [cSploit/android](https://github.com/cSploi
 
 - Replaced deprecated **`IntentService`** with **`Service` + `HandlerThread`**: **`UpdateService`**, **`MultiAttackService`**. Foreground **`dataSync`** behavior unchanged; intents processed serially per service instance.
 
+## Device testing & MSF integration
+
+- **`docs/NETHUNTER_ONEPLUS5_RUNBOOK.md`**: install paths for **debug/release APK**, **OnePlus 5 / NetHunter**, **core/ruby/msf** layout, and **Metasploit RPC** (local `msfrpcd` vs remote + port forward). Script: **`scripts/install-device-debug.sh`**.
+
 ## Next steps (Phase 2+)
 
 - Optional: **`WorkManager`** for deferrable work; keep **`Service` + FGS** for long-running downloads / multi-attack (user-visible).
 - **SAF** for user-exported pcap/logs; optional **MANAGE_EXTERNAL_STORAGE** doc-only path for power users choosing arbitrary dirs.
-- Ethics / lab acknowledgment in UI (per mission).
 - Raise **Java language level** / toolchain once code is ready (AGP warns on source/target 8 under JDK 21).
+- **Phase 3–5** per **`AGENTS.md`** (MITM engine, UX parity, NetHunter wrappers, formal security review).
