@@ -1,0 +1,31 @@
+How cSploit wires the split repositories together (v1.6.x line and this tree)
+================================================================================
+
+1) Android app (this repo, module cSploit)
+   - Java UI and logic under org.csploit.android.*
+   - Loads JNI via org.csploit.android.core.Client: libcSploitCommon, libcSploitClient.
+
+2) Native core: github.com/cSploit/android.native (git submodule at cSploit/jni)
+   - NDK build (Android.mk / Application.mk) produces:
+     * libcSploitClient.so, libcSploitCommon.so — MsgPack-over-Unix-socket client that talks to the daemon.
+     * cSploitDaemon + handler plugins under cSploitHandlers/ — each "tool" (nmap, arpspoof, network-radar, …) is a named handler the Java Tool classes invoke through ChildManager -> Client.StartCommand(handler, …).
+   - Submodules inside android.native (see jni/.gitmodules) pull in the actual upstream sources:
+     * cSploit/common          -> cSploitCommon (shared headers/libs)
+     * cSploit/arpspoof       -> arpspoof binary + handler wrapper
+     * cSploit/network-radar  -> network discovery helper used by the daemon/handlers
+     * cSploit/daemon         -> cSploitDaemon (referenced as cSploitDaemon in Android.mk; C daemon, not the Go preview in the top-level daemon repo)
+     * Plus vendored nmap, hydra, ettercap, ruby, etc.
+
+3) Metasploit on device (optional; you want this OFF)
+   - Historically: separate repo cSploit/android.MSF and downloads (ruby + msf tarballs) via UpdateService / GitHubParser.
+   - For RPC-only: disable MSF in settings and point RPC host/port at an external msfrpcd; do not install the MSF tarball.
+
+4) Repos that are NOT part of the classic v1.6 native bundle
+   - cSploit/client — web/Cordova UI for the newer Go daemon experiment; not used by the Android app.
+   - Deathtanium/evilproxy — not referenced from android.native; MITM in the app is Java HTTP proxy + native arpspoof/ettercap/tcpdump.
+
+5) Build notes
+   - android.native targets older NDK (e.g. gnustl_static in Application.mk). You may need NDK r16b or a patched toolchain for a clean build on current machines.
+   - After clone:  git submodule update --init --recursive
+
+Deathtanium forks (android.MSF, daemon, network-radar, evilproxy, common) mirror the same split; the integration point is still android.native + submodules, not a flat merge of those repos into one folder without the NDK glue.

@@ -48,6 +48,9 @@ proguard/
 actionbarsherlock/build/
 dSploit/build/
 cSploit/build/
+
+# Local clones for reference only (not part of the app build)
+vendor-components/
 # External tool builders
 .externalToolBuilders/
 

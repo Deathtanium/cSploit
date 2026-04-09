@@ -56,6 +56,17 @@ android {
         if(System.getenv("NIGHTLY_BUILD")) {
             versionName += "+" + System.getenv("NIGHTLY_BUILD_COMMIT").substring(0, 7)
         }
+        ndk {
+            abiFilters 'armeabi', 'armeabi-v7a', 'arm64-v8a'
+        }
+    }
+
+    // Builds libcSploitClient / libcSploitCommon (JNI) and native tools from the android.native tree.
+    // Submodule: cSploit/jni -> https://github.com/cSploit/android.native (see cSploit/NATIVE_INTEGRATION.txt).
+    externalNativeBuild {
+        ndkBuild {
+            path file('jni/Android.mk')
+        }
     }
 
     lintOptions {
