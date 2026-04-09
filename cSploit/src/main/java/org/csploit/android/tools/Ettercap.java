@@ -25,7 +25,6 @@ import org.csploit.android.core.System;
 import org.csploit.android.events.Account;
 import org.csploit.android.events.Event;
 import org.csploit.android.events.Message;
-import org.csploit.android.events.Newline;
 import org.csploit.android.events.Ready;
 import org.csploit.android.net.Target;
 
@@ -70,14 +69,17 @@ public class Ettercap extends Tool
           if (m.severity == Message.Severity.ERROR)
             onError(((Message) e).message);
         }
-        else if (e instanceof Newline){
-          Logger.info("OnDNSSpooferReceiver() Newline: " + e.toString());
-          onSpoofed(e.toString());
-        }
         else {
           onSpoofed(e.toString());
         }
       }
+
+      @Override
+      public void onStdout(String line) {
+        Logger.info("OnDNSSpooferReceiver() stdout: " + line);
+        onSpoofed(line);
+      }
+
       public abstract void onEnd(int exitValue);
       public abstract void onSpoofed(String line);
       public abstract void onStderr(String line);

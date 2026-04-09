@@ -32,6 +32,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.csploit.android.R;
+import org.csploit.android.gui.NmapProcessConsole;
 import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.Plugin;
 import org.csploit.android.core.System;
@@ -52,6 +53,7 @@ public class Inspector extends Plugin{
   private boolean mFocusedScan = false;
   private Receiver mReceiver = null;
   private String empty = null;
+  private NmapProcessConsole mNmapConsole;
 
   public Inspector(){
     super(
@@ -68,6 +70,10 @@ public class Inspector extends Plugin{
     if(mProcess!=null) {
       mProcess.kill();
       mProcess = null;
+    }
+
+    if (mNmapConsole != null) {
+      mNmapConsole.setVisible(false);
     }
 
     mActivity.setVisibility(View.INVISIBLE);
@@ -125,6 +131,10 @@ public class Inspector extends Plugin{
 
       updateView();
 
+      if (mNmapConsole != null) {
+        mNmapConsole.clear();
+      }
+
       mProcess = System.getTools().nmap.inpsect( target, mReceiver, mFocusedScan);
       mStartButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_stop_24dp));
 
@@ -164,6 +174,11 @@ public class Inspector extends Plugin{
       mDeviceOS.setText(System.getCurrentTarget().getDeviceOS());
 
     empty = getText(R.string.unknown).toString();
+
+    mNmapConsole = new NmapProcessConsole(this);
+    if (mNmapConsole.isAvailable()) {
+      mNmapConsole.setVisible(false);
+    }
 
     // yep, we're on main thread here
     write_services();
@@ -230,6 +245,29 @@ public class Inspector extends Plugin{
 
     public Receiver(Target target) {
       this.target = target;
+    }
+
+    @Override
+    public void onStart(String commandLine) {
+      super.onStart(commandLine);
+      if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+        mNmapConsole.setVisible(true);
+        mNmapConsole.appendLine("$ nmap " + commandLine);
+      }
+    }
+
+    @Override
+    public void onStdout(String line) {
+      if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+        mNmapConsole.appendLine(line);
+      }
+    }
+
+    @Override
+    public void onStderr(String line) {
+      if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+        mNmapConsole.appendLine(line);
+      }
     }
 
     @Override
