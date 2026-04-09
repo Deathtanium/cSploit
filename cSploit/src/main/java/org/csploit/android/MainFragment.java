@@ -671,8 +671,9 @@ public class MainFragment extends Fragment {
         ThreadHelper.getSharedExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                if (Services.getMsfRpcdService().isAvailable())
-                    Services.getMsfRpcdService().start();
+                if (Services.getMsfRpcdService().isAvailable()) {
+                    Services.getMsfRpcdService().start(false);
+                }
             }
         });
     }

@@ -6,14 +6,12 @@ import android.content.SharedPreferences;
 import android.view.MenuItem;
 
 import org.csploit.android.R;
-import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.Logger;
 import org.csploit.android.core.System;
 import org.csploit.android.net.metasploit.RPCClient;
-import org.csploit.android.tools.MsfRpcd;
 
 /**
- * The MSFRPC daemon manager
+ * Metasploit RPC: connects to an existing msfrpcd (on-device or remote). Does not spawn the daemon.
  */
 public class MsfRpcdService extends NativeService implements MenuControllableService {
 
@@ -26,18 +24,10 @@ public class MsfRpcdService extends NativeService implements MenuControllableSer
 
   @Override
   public void onMenuClick(Activity activity, final MenuItem item) {
-    if(isLocal()) {
-      if(isRunning()) {
-        stop();
-      } else {
-        start();
-      }
+    if (isConnected()) {
+      stop();
     } else {
-      if(isConnected()) {
-        disconnect();
-      } else {
-        connect();
-      }
+      start(true);
     }
 
     activity.runOnUiThread(new Runnable() {
@@ -51,9 +41,7 @@ public class MsfRpcdService extends NativeService implements MenuControllableSer
   @Override
   public void buildMenuItem(MenuItem item) {
     item.setTitle(
-            isLocal() ?
-                    (isRunning() ? R.string.stop_msfrpcd : R.string.start_msfrpcd) :
-                    (isConnected() ? R.string.connect_msf : R.string.disconnect_msf));
+            isConnected() ? R.string.disconnect_msfrpcd : R.string.connect_msfrpcd);
     item.setEnabled(isAvailable());
   }
 
@@ -108,10 +96,13 @@ public class MsfRpcdService extends NativeService implements MenuControllableSer
   }
 
   public boolean isAvailable() {
-    return !isLocal() || (
-              System.getLocalMsfVersion() != null &&
-              System.getTools().msfrpcd.isEnabled() &&
-              !System.isServiceRunning("org.csploit.android.services.UpdateService"));
+    if (!System.isCoreInitialized()) {
+      return false;
+    }
+    if (System.isServiceRunning("org.csploit.android.services.UpdateService")) {
+      return false;
+    }
+    return true;
   }
 
   @Override
@@ -119,78 +110,54 @@ public class MsfRpcdService extends NativeService implements MenuControllableSer
     return 2;
   }
 
-  @Override
-  public boolean start() {
-    if(isConnected())
+  /**
+   * Try to open an RPC session to msfrpcd.
+   *
+   * @param notifyOnFailure if true, broadcast {@link Status#CONNECTION_FAILED} when unreachable (menu action).
+   */
+  public boolean start(boolean notifyOnFailure) {
+    if (isConnected()) {
       return true;
+    }
 
     stop();
 
-    if(connect(isLocal())) {
-      if(isLocal()) {
-        Logger.warning("connected to a lost instance of the msfrpcd");
-      }
-      return true;
-    }
+    return connect(notifyOnFailure);
+  }
 
-    if(!isLocal()) {
-      return false;
-    }
+  @Override
+  public boolean start() {
+    return start(true);
+  }
 
+  /**
+   * @param notifyOnFailure broadcast connection failure when true
+   * @return true if connection succeeded
+   */
+  private boolean connect(boolean notifyOnFailure) {
     try {
-      nativeProcess = System.getTools().msfrpcd.async(user, password, port, ssl, new Receiver());
+      System.setMsfRpc(new RPCClient(host, user, password, port, ssl));
+      Logger.info("successfully connected to MSF RPC Daemon ");
+      sendIntent(STATUS_ACTION, STATUS, Status.CONNECTED);
       return true;
-    } catch (ChildManager.ChildNotStartedException e) {
-      Logger.error(e.getMessage());
-      sendIntent(STATUS_ACTION, STATUS, Status.START_FAILED);
+    } catch (Exception e) {
+      Logger.warning(e.getClass().getName() + ": " + e.getMessage());
     }
-    return false;
-  }
 
-  /**
-   * connect to this msfrpcd instance
-   * @param silent quietly fail if true
-   * @return true if connection succeeded, false otherwise
-   */
-  private boolean connect(boolean silent) {
-    do {
-      try {
-        System.setMsfRpc(new RPCClient(host, user, password, port, ssl));
-        Logger.info("successfully connected to MSF RPC Daemon ");
-        sendIntent(STATUS_ACTION, STATUS, Status.CONNECTED);
-        return true;
-      } catch (Exception e) {
-        Logger.warning(e.getClass().getName() + ": " + e.getMessage());
-      }
-
-      if(isRunning()) {
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException e) {
-          stop();
-        }
-      }
-    } while(isRunning() && !isConnected());
-
-    if(!silent)
+    if (notifyOnFailure) {
       sendIntent(STATUS_ACTION, STATUS, Status.CONNECTION_FAILED);
+    }
 
     return false;
   }
 
-  /**
-   * connect to this msfrpcd instance
-   * @return true if connection succeeded, false otherwise
-   */
   public boolean connect() {
-    return connect(false);
+    return connect(true);
   }
 
   public void disconnect() {
     System.setMsfRpc(null);
-    if(!isLocal()) {
-      sendIntent(STATUS_ACTION, STATUS, Status.DISCONNECTED);
-    }
+    sendIntent(STATUS_ACTION, STATUS, Status.DISCONNECTED);
   }
 
   private boolean isConnected() {
@@ -201,31 +168,5 @@ public class MsfRpcdService extends NativeService implements MenuControllableSer
   public boolean stop() {
     disconnect();
     return super.stop();
-  }
-
-  private class Receiver extends MsfRpcd.MsfRpcdReceiver {
-    @Override
-    public void onReady() {
-      connect();
-    }
-
-    @Override
-    public void onStart(String cmd) {
-      sendIntent(STATUS_ACTION, STATUS, Status.STARTING);
-    }
-
-    @Override
-    public void onDeath(int signal) {
-      if(!isConnected())
-        disconnect();
-      sendIntent(STATUS_ACTION, STATUS, Status.KILLED);
-    }
-
-    @Override
-    public void onEnd(int exitValue) {
-      if(!isConnected())
-        disconnect();
-      sendIntent(STATUS_ACTION, STATUS, Status.STOPPED);
-    }
   }
 }

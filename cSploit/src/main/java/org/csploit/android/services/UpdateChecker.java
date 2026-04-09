@@ -234,13 +234,6 @@ public class UpdateChecker extends Thread
 
     boolean checkCore = prefs.getBoolean("PREF_UPDATES_CORE", true);
 
-    boolean canCheckMsf = System.isCoreInitialized() && prefs.getBoolean("MSF_ENABLED", true);
-
-    boolean checkRuby = canCheckMsf && prefs.getBoolean("PREF_UPDATES_RUBY", true);
-
-    boolean checkMsf = canCheckMsf && prefs.getBoolean("PREF_UPDATES_MSF", true) &&
-            System.getLocalRubyVersion() != null;
-
     Update update = null;
 
     if(checkApp)
@@ -248,12 +241,6 @@ public class UpdateChecker extends Thread
 
     if(update == null && checkCore)
       update = getCoreUpdate();
-
-    if(update == null && checkRuby)
-      update = getRubyUpdate();
-
-    if(update == null && checkMsf)
-      update = getMsfUpdate();
 
     if(update != null) {
       send(UPDATE_AVAILABLE, update);
