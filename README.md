@@ -1,6 +1,10 @@
-# cSploit is now considered EOL and is not being updated by the developers. Current version might not be functional on newer Android versions. We appreciate everyone who contributed to cSploit over the years. 
+# cSploit is now considered EOL and is not being updated by the developers. Current version might not be functional on newer Android versions. We appreciate everyone who contributed to cSploit over the years.
 
+This **Deathtanium** fork keeps a **single-repo** layout with a **bundled native core** and **prebuilt JNI** so the app can be built without compiling the full historical NDK tree. **Metasploit** is used via **RPC only** (connect to an existing `msfrpcd` in settings).
 
+- **[BUILDING.md](BUILDING.md)** — repository structure, how this fork was assembled, and step-by-step build instructions for contributors.
+
+---
 
 # cSploit: Android network pentesting suite
 
@@ -17,8 +21,8 @@ See more at [www.cSploit.org](http://www.csploit.org).
 * Fingerprint hosts' operating systems and open ports
 * Add your own hosts outside the local network
 * Integrated traceroute
-* **Integrated [Metasploit](https://www.metasploit.com/) framework RPCd**
-  * Search hosts for **known vulnerabilities** via integrated Metasploit daemon
+* **Metasploit RPC** (this fork: connect to an external `msfrpcd`; no on-device framework install)
+  * Search hosts for **known vulnerabilities** when connected to Metasploit RPC
   * Adjust exploit settings, launch, and create shell consoles on exploited systems
   * More coming
 * Forge TCP/UDP packets
@@ -41,7 +45,7 @@ See more at [www.cSploit.org](http://www.csploit.org).
 * [Use cSploit for simple Man-in-the-Middle (MITM security demos](https://github.com/cSploit/android/wiki/%5BTutorial%5D-Use-cSploit-for-simple-Man-In-The-Middle-(MITM)-security-demos)
 
 
-Also see the [wiki](https://github.com/cSploit/android/wiki) for instructions on building, [reporting issues](https://github.com/cSploit/android/wiki/How-to-open-an-issue), and more.
+Also see the [wiki](https://github.com/cSploit/android/wiki) for legacy context, [reporting issues](https://github.com/cSploit/android/wiki/How-to-open-an-issue), and more. **Building this fork:** see [BUILDING.md](BUILDING.md).
 
 ## Requirements
 
@@ -61,7 +65,7 @@ Moreover, the app is available in [the official F-Droid repo](https://f-droid.or
 
 ## How to contribute
 
-All contributions are welcome, from code to documentation to graphics to design suggestions to bug reports.  Please use GitHub to its fullest-- contribute Pull Requests, contribute tutorials or other wiki content-- whatever you have to offer, we can use it!
+All contributions are welcome, from code to documentation to graphics to design suggestions to bug reports. Please open pull requests against this repository. **Build from source:** follow [BUILDING.md](BUILDING.md) (JDK 8, Android SDK 28, optional helper scripts for bundled artifacts).
 
 ## License
 
