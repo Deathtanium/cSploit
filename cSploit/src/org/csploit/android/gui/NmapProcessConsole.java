@@ -24,8 +24,8 @@ public final class NmapProcessConsole {
   public NmapProcessConsole(Activity activity) {
     mActivity = activity;
     mContainer = activity.findViewById(R.id.nmapConsoleContainer);
-    mScroll = activity.findViewById(R.id.nmapConsoleScroll);
-    mOutput = activity.findViewById(R.id.nmapConsoleOutput);
+    mScroll = (ScrollView) activity.findViewById(R.id.nmapConsoleScroll);
+    mOutput = (TextView) activity.findViewById(R.id.nmapConsoleOutput);
     if (mOutput != null) {
       mOutput.setText("");
     }

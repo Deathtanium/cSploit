@@ -383,6 +383,7 @@ public class PortScanner extends Plugin {
     public void onStart(String commandLine) {
       super.onStart(commandLine);
 
+      final String cmd = commandLine;
       PortScanner.this.runOnUiThread(new Runnable() {
         @Override
         public void run() {
@@ -390,7 +391,7 @@ public class PortScanner extends Plugin {
           mScanProgress.setVisibility(View.VISIBLE);
           if (mNmapConsole != null && mNmapConsole.isAvailable()) {
             mNmapConsole.setVisible(true);
-            mNmapConsole.appendLine("$ nmap " + commandLine);
+            mNmapConsole.appendLine("$ nmap " + cmd);
           }
         }
       });

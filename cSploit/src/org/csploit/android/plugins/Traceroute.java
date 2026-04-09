@@ -164,6 +164,7 @@ public class Traceroute extends Plugin {
 		public void onStart(String commandLine) {
 			super.onStart(commandLine);
 
+			final String cmd = commandLine;
 			Traceroute.this.runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -171,7 +172,7 @@ public class Traceroute extends Plugin {
 					mTraceProgress.setVisibility(View.VISIBLE);
 					if (mNmapConsole != null && mNmapConsole.isAvailable()) {
 						mNmapConsole.setVisible(true);
-						mNmapConsole.appendLine("$ nmap " + commandLine);
+						mNmapConsole.appendLine("$ nmap " + cmd);
 					}
 				}
 			});
