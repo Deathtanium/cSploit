@@ -45,7 +45,7 @@
             android:title="@string/menu_stop_monitor" />
         <item
             android:id="@+id/ss_msfrpcd"
-            android:title="@string/menu_stop_msfrpcd" />
+            android:title="@string/menu_connect_msfrpcd" />
         <item
             android:id="@+id/submit_issue"
             android:title="@string/menu_submit_issue" />

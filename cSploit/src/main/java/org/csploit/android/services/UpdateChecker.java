@@ -24,6 +24,7 @@ import android.content.SharedPreferences;
 
 import com.github.zafarkhaja.semver.Version;
 
+import org.csploit.android.core.BundledCoreInstaller;
 import org.csploit.android.core.*;
 import org.csploit.android.core.System;
 import org.csploit.android.net.GitHubParser;
@@ -107,6 +108,9 @@ public class UpdateChecker extends Thread
     Update update;
 
     try {
+      if (localVersion == null && BundledCoreInstaller.hasBundledCoreAsset(mContext)) {
+        return null;
+      }
 
       remoteVersion = GitHubParser.getCoreRepo().getLastReleaseVersion();
 
@@ -230,13 +234,6 @@ public class UpdateChecker extends Thread
 
     boolean checkCore = prefs.getBoolean("PREF_UPDATES_CORE", true);
 
-    boolean canCheckMsf = System.isCoreInitialized() && prefs.getBoolean("MSF_ENABLED", true);
-
-    boolean checkRuby = canCheckMsf && prefs.getBoolean("PREF_UPDATES_RUBY", true);
-
-    boolean checkMsf = canCheckMsf && prefs.getBoolean("PREF_UPDATES_MSF", true) &&
-            System.getLocalRubyVersion() != null;
-
     Update update = null;
 
     if(checkApp)
@@ -244,12 +241,6 @@ public class UpdateChecker extends Thread
 
     if(update == null && checkCore)
       update = getCoreUpdate();
-
-    if(update == null && checkRuby)
-      update = getRubyUpdate();
-
-    if(update == null && checkMsf)
-      update = getMsfUpdate();
 
     if(update != null) {
       send(UPDATE_AVAILABLE, update);

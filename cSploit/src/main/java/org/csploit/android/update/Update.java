@@ -25,7 +25,8 @@ public abstract class Update implements Serializable {
           skipRoot,
           fixShebang,
           errorOccurred,
-          wipeOnFail;
+          wipeOnFail,
+          copyFromBundledAsset;
   public String
           prompt;
 
@@ -40,7 +41,7 @@ public abstract class Update implements Serializable {
       version = null;
       compression = null;
       archiver = null;
-      wipeOnFail = fixShebang = errorOccurred = skipRoot = false;
+      wipeOnFail = fixShebang = errorOccurred = skipRoot = copyFromBundledAsset = false;
     }
   }
 

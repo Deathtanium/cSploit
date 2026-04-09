@@ -48,6 +48,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.csploit.android.core.BundledCoreInstaller;
 import org.csploit.android.core.Child;
 import org.csploit.android.core.Client;
 import org.csploit.android.core.CrashReporter;
@@ -278,9 +279,14 @@ public class MainFragment extends Fragment {
         // check minimum requirements for system initialization
 
         if (!mIsCoreInstalled) {
-            EMPTY_LIST_MESSAGE = mIsConnectivityAvailable ?
-                    getString(R.string.missing_core_update) :
-                    getString(R.string.no_connectivity);
+            if (BundledCoreInstaller.hasBundledCoreAsset(getActivity())) {
+                EMPTY_LIST_MESSAGE = getString(R.string.bundled_core_installing);
+            } else {
+                EMPTY_LIST_MESSAGE = mIsConnectivityAvailable ?
+                        getString(R.string.missing_core_update) :
+                        getString(R.string.no_connectivity);
+            }
+            BundledCoreInstaller.startInstallIfNeeded(getActivity().getApplicationContext());
             return;
         } else if (!mIsDaemonBeating) {
             try {
@@ -623,7 +629,10 @@ public class MainFragment extends Fragment {
     };
 
     public void startUpdateChecker() {
-        if (!isConnectivityAvailable() || mIsUpdateDownloading)
+        if (mIsUpdateDownloading)
+            return;
+        if (!isConnectivityAvailable() &&
+                (!BundledCoreInstaller.needsInstall() || !BundledCoreInstaller.hasBundledCoreAsset(getActivity())))
             return;
         if (System.getSettings().getBoolean("PREF_CHECK_UPDATES", true)) {
             new UpdateChecker(getActivity()).start();
@@ -662,8 +671,9 @@ public class MainFragment extends Fragment {
         ThreadHelper.getSharedExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                if (Services.getMsfRpcdService().isAvailable())
-                    Services.getMsfRpcdService().start();
+                if (Services.getMsfRpcdService().isAvailable()) {
+                    Services.getMsfRpcdService().start(false);
+                }
             }
         });
     }
@@ -1237,7 +1247,10 @@ public class MainFragment extends Fragment {
                                 "#STATUS#", getString(R.string.no_updates_available)));
 
                     if (!System.isCoreInstalled()) {
-                        onInitializationError(getString(R.string.no_core_found));
+                        if (!(BundledCoreInstaller.hasBundledCoreAsset(getActivity())
+                                && BundledCoreInstaller.needsInstall())) {
+                            onInitializationError(getString(R.string.no_core_found));
+                        }
                     }
                     break;
                 case UPDATE_AVAILABLE:
