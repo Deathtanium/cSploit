@@ -34,6 +34,14 @@ import java.util.LinkedList;
 
 public class NMap extends Tool {
 
+  /**
+   * Extra nmap flags for {@link #inpsect} to keep service/OS inspection usable on slow or
+   * resource-constrained devices (e.g. Nexus 5 with NetHunter). Default {@code -sV} intensity and
+   * scan retries can make a single host take many minutes.
+   */
+  private static final String INSPECT_TIMING_OPTS =
+      "--max-retries 2 --version-intensity 5 --max-os-tries 1 ";
+
   public static abstract class TraceReceiver extends Child.EventReceiver
   {
     public void onEnd( int exitCode ) {
@@ -181,7 +189,7 @@ public class NMap extends Tool {
             udp.add(pNumber);
         }
       }
-      cmd = "-T4 -sV -O --privileged --send-ip --system-dns -Pn -oX - ";
+      cmd = "-T4 -sV -O --privileged --send-ip --system-dns -Pn -oX - " + INSPECT_TIMING_OPTS;
       if(tcp.size() + udp.size() > 0) {
         cmd+= "-p ";
         if(tcp.size()>0)
@@ -193,7 +201,8 @@ public class NMap extends Tool {
       cmd+= target.getCommandLineRepresentation();
     }
     else
-      cmd = "-T4 -F -O -sV --privileged --send-ip --system-dns -oX - " + target.getCommandLineRepresentation();
+      cmd = "-T4 -F -O -sV --privileged --send-ip --system-dns -oX - " + INSPECT_TIMING_OPTS
+          + target.getCommandLineRepresentation();
 
     Logger.debug( "Inspect - " + cmd );
 
