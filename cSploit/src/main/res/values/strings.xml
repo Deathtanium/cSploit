@@ -198,6 +198,7 @@
     </string>
     <string name="port_scanner">Port scanner</string>
     <string name="port_scanner_desc">Perform a SYN port scanning on target.</string>
+    <string name="nmap_console_label">nmap output</string>
     <string name="router_pwn">Router PWN</string>
     <string name="router_pwn_desc">Launch the http://routerpwn.com/ service to pwn your router.
     </string>
