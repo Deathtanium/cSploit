@@ -140,6 +140,8 @@ This pulls **`cSploit/jni`** (large). It is **not required** for the Gradle step
 
 Rebuilding **everything** from `cSploit/jni` requires the **legacy NDK** and toolchain matching **`Application.mk`** (e.g. `gnustl_static`, older GCC). That path is fragile on modern hosts and is **not** what the CI-friendly procedure above uses. Use the submodule only if you are porting or debugging native code.
 
+Long-term goal: fold all native sources and JNI into one always-buildable tree—see **[TODO.md](TODO.md)** in the repo root.
+
 ---
 
 ## Legal use

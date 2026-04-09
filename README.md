@@ -3,6 +3,7 @@
 This **Deathtanium** fork keeps a **single-repo** layout with a **bundled native core** and **prebuilt JNI** so the app can be built without compiling the full historical NDK tree. **Metasploit** is used via **RPC only** (connect to an existing `msfrpcd` in settings).
 
 - **[BUILDING.md](BUILDING.md)** — repository structure, how this fork was assembled, and step-by-step build instructions for contributors.
+- **[TODO.md](TODO.md)** — planned work (including full in-tree native build / multirepo goal).
 
 ---
 
