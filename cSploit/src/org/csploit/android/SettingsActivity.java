@@ -427,6 +427,8 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         mPasswordFilename.setText(passFileName);
+      } else if (key.equals("MSF_USE_BUNDLED_RESOURCES")) {
+        System.reloadTools();
       } else if (key.equals("MSF_ENABLED")) {
         if (mMsfEnabled.isChecked())
           onMsfEnabled();

@@ -51,6 +51,12 @@ public class Child {
     public void onStderr(String line) { }
 
     /**
+     * callback function called whence the child print something on the stdout
+     * @param line  the printed line
+     */
+    public void onStdout(String line) { }
+
+    /**
      * callback function called whence the child generate an evant
      * @param e the generated {@link org.csploit.android.events.Event}
      */

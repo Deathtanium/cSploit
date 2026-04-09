@@ -1097,7 +1097,8 @@ public class MainActivity extends AppCompatActivity {
 
       System.reloadTools();
 
-      if((update instanceof MsfUpdate) || (update instanceof RubyUpdate)) {
+      if(System.getSettings().getBoolean("MSF_USE_BUNDLED_RESOURCES", false) &&
+          ((update instanceof MsfUpdate) || (update instanceof RubyUpdate))) {
         StartRPCServer();
       }
 

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/nmapConsoleContainer"
+    android:layout_width="match_parent"
+    android:layout_height="120dp"
+    android:background="?android:attr/windowBackground"
+    android:elevation="4dp"
+    android:orientation="vertical"
+    android:paddingBottom="4dp"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp"
+    android:paddingTop="4dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/nmap_console_label"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/app_color"
+        android:textStyle="bold" />
+
+    <ScrollView
+        android:id="@+id/nmapConsoleScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="2dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:scrollbars="vertical">
+
+        <TextView
+            android:id="@+id/nmapConsoleOutput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textIsSelectable="true"
+            android:textSize="10sp"
+            android:typeface="monospace" />
+    </ScrollView>
+</LinearLayout>

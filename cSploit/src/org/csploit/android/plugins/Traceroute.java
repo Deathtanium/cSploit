@@ -33,6 +33,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.csploit.android.R;
+import org.csploit.android.gui.NmapProcessConsole;
 import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.Plugin;
 import org.csploit.android.core.System;
@@ -46,6 +47,7 @@ public class Traceroute extends Plugin {
 	private ArrayAdapter<String> mListAdapter = null;
 	private Receiver mTraceReceiver = null;
 	private boolean resolveNames = false;
+	private NmapProcessConsole mNmapConsole;
 
 	public Traceroute() {
 		super(R.string.trace, R.string.trace_desc,
@@ -61,6 +63,9 @@ public class Traceroute extends Plugin {
       mProcess.kill();
       mProcess = null;
     }
+		if (mNmapConsole != null) {
+			mNmapConsole.setVisible(false);
+		}
 		mTraceProgress.setVisibility(View.INVISIBLE);
 		mRunning = false;
 		mTraceFloatingActionButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_play_arrow_24dp));
@@ -68,6 +73,9 @@ public class Traceroute extends Plugin {
 
 	private void setStartedState() {
 		mListAdapter.clear();
+		if (mNmapConsole != null) {
+			mNmapConsole.clear();
+		}
 		mTraceFloatingActionButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_stop_24dp));
 
     try {
@@ -109,6 +117,11 @@ public class Traceroute extends Plugin {
 		mListAdapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1);
 		mTraceList.setAdapter(mListAdapter);
+
+		mNmapConsole = new NmapProcessConsole(this);
+		if (mNmapConsole.isAvailable()) {
+			mNmapConsole.setVisible(false);
+		}
 	}
 
   @Override
@@ -156,8 +169,26 @@ public class Traceroute extends Plugin {
 				public void run() {
 					mRunning = true;
 					mTraceProgress.setVisibility(View.VISIBLE);
+					if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+						mNmapConsole.setVisible(true);
+						mNmapConsole.appendLine("$ nmap " + commandLine);
+					}
 				}
 			});
+		}
+
+		@Override
+		public void onStdout(String line) {
+			if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+				mNmapConsole.appendLine(line);
+			}
+		}
+
+		@Override
+		public void onStderr(String line) {
+			if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+				mNmapConsole.appendLine(line);
+			}
 		}
 
 		@Override

@@ -47,6 +47,7 @@ import org.csploit.android.core.System;
 import org.csploit.android.gui.dialogs.ConfirmDialog;
 import org.csploit.android.gui.dialogs.ConfirmDialog.ConfirmDialogListener;
 import org.csploit.android.gui.dialogs.ErrorDialog;
+import org.csploit.android.gui.NmapProcessConsole;
 import org.csploit.android.gui.dialogs.InputDialog;
 import org.csploit.android.gui.dialogs.InputDialog.InputDialogListener;
 import org.csploit.android.net.Network;
@@ -74,6 +75,7 @@ public class PortScanner extends Plugin {
   private SharedPreferences mPreferences = null;
   private Map<Integer, String> urlFormats = new HashMap<>();
   private boolean mShowCustomParameters = false;
+  private NmapProcessConsole mNmapConsole;
 
   public PortScanner() {
     super(R.string.port_scanner, R.string.port_scanner_desc,
@@ -126,6 +128,9 @@ public class PortScanner extends Plugin {
       mProcess.kill();
       mProcess = null;
     }
+    if (mNmapConsole != null) {
+      mNmapConsole.setVisible(false);
+    }
     saveCustomParameters();
 
     mScanProgress.setVisibility(View.INVISIBLE);
@@ -139,6 +144,10 @@ public class PortScanner extends Plugin {
 
   private void setStartedState() {
     createPortList();
+
+    if (mNmapConsole != null) {
+      mNmapConsole.clear();
+    }
 
     try {
       if (mShowCustomParameters) {
@@ -193,6 +202,11 @@ public class PortScanner extends Plugin {
     mScanProgress = (ProgressBar) findViewById(R.id.scanActivity);
 
     mShowCustomParameters = mPreferences.getBoolean(CUSTOM_PARAMETERS, false);
+
+    mNmapConsole = new NmapProcessConsole(this);
+    if (mNmapConsole.isAvailable()) {
+      mNmapConsole.setVisible(false);
+    }
 
     if (mShowCustomParameters)
       displayParametersField();
@@ -374,8 +388,26 @@ public class PortScanner extends Plugin {
         public void run() {
           mRunning = true;
           mScanProgress.setVisibility(View.VISIBLE);
+          if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+            mNmapConsole.setVisible(true);
+            mNmapConsole.appendLine("$ nmap " + commandLine);
+          }
         }
       });
+    }
+
+    @Override
+    public void onStdout(String line) {
+      if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+        mNmapConsole.appendLine(line);
+      }
+    }
+
+    @Override
+    public void onStderr(String line) {
+      if (mNmapConsole != null && mNmapConsole.isAvailable()) {
+        mNmapConsole.appendLine(line);
+      }
     }
 
     @Override

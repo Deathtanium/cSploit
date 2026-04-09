@@ -178,6 +178,10 @@ public class ChildManager {
     } else if(event instanceof StderrNewline) {
       if(c.receiver != null)
         c.receiver.onStderr(((StderrNewline) event).line);
+    } else if(event instanceof Newline) {
+      if(c.receiver != null)
+        c.receiver.onStdout(((Newline) event).line);
+      return;
     } else if(c.receiver != null) {
       c.receiver.onEvent(event);
     }

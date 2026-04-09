@@ -1,5 +1,7 @@
 package org.csploit.android.tools;
 
+import android.content.SharedPreferences;
+
 import org.csploit.android.core.*;
 import org.csploit.android.core.System;
 import org.csploit.android.events.Event;
@@ -24,6 +26,24 @@ public class MsfRpcd extends Msf {
     mHandler = "msfrpcd";
   }
 
+  @Override
+  public void setEnabled() {
+    mEnabled = ChildManager.handlers != null && ChildManager.handlers.contains(mHandler);
+    SharedPreferences prefs = System.getSettings();
+    boolean rpcLocal = "127.0.0.1".equals(prefs.getString("MSF_RPC_HOST", "127.0.0.1"));
+    if (rpcLocal && System.usesBundledMsfResources()) {
+      mEnabled = mEnabled && (System.getLocalMsfVersion() != null ||
+          ExecChecker.msf().canExecuteInDir(System.getMsfPath()));
+    }
+  }
+
+  @Override
+  protected void registerSettingReceiver() {
+    super.registerSettingReceiver();
+    onSettingsChanged.addFilter("MSF_RPC_HOST");
+    onSettingsChanged.addFilter("MSF_USE_BUNDLED_RESOURCES");
+  }
+
   /**
    * start an MsfRpcd
    * @param receiver  will be notified when the daemon it's ready to accept connections
@@ -40,6 +60,8 @@ public class MsfRpcd extends Msf {
   }*/
 
   public static boolean isInstalled() {
+    if (!System.usesBundledMsfResources())
+      return true;
     return System.getLocalMsfVersion() != null;
   }
 }

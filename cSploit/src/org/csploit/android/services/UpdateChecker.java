@@ -230,7 +230,8 @@ public class UpdateChecker extends Thread
 
     boolean checkCore = prefs.getBoolean("PREF_UPDATES_CORE", true);
 
-    boolean canCheckMsf = System.isCoreInitialized() && prefs.getBoolean("MSF_ENABLED", true);
+    boolean bundledMsf = prefs.getBoolean("MSF_USE_BUNDLED_RESOURCES", false);
+    boolean canCheckMsf = System.isCoreInitialized() && prefs.getBoolean("MSF_ENABLED", true) && bundledMsf;
 
     boolean checkRuby = canCheckMsf && prefs.getBoolean("PREF_UPDATES_RUBY", true);
 

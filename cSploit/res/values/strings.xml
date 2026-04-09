@@ -198,6 +198,7 @@
     </string>
     <string name="port_scanner">Port scanner</string>
     <string name="port_scanner_desc">Perform a SYN port scanning on target.</string>
+    <string name="nmap_console_label">nmap output</string>
     <string name="router_pwn">Router PWN</string>
     <string name="router_pwn_desc">Launch the http://routerpwn.com/ service to pwn your router.
     </string>
@@ -399,6 +400,8 @@
     <string name="pref_folder">Folder</string>
     <string name="pref_msf_enable">Enable MSF</string>
     <string name="pref_msf_enable_desc">Enable the Metasploit Framework</string>
+    <string name="pref_msf_bundled">Bundled Ruby/MSF</string>
+    <string name="pref_msf_bundled_desc">Use in-app Ruby and MSF installs (large downloads). Turn off to use only external MSF RPC (e.g. Kali NetHunter).</string>
     <string name="pref_msf_notifications">MSF status notifications</string>
     <string name="pref_msf_notifications_desc">View MSF RPC connection status</string>
     <string name="pref_msf_delete">Delete MSF</string>

@@ -627,6 +627,31 @@ public class System
     return PreferenceManager.getDefaultSharedPreferences(mContext);
   }
 
+  /**
+   * One-time defaults for NetHunter / external-MSF setups: skip bundled Ruby/MSF downloads
+   * and prefer TLS to local msfrpcd when preferences have never been migrated.
+   */
+  public static void ensureNetHunterMsfDefaults(Context context) {
+    SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(context);
+    if (p.contains("MSF_USE_BUNDLED_RESOURCES"))
+      return;
+    SharedPreferences.Editor e = p.edit();
+    e.putBoolean("MSF_USE_BUNDLED_RESOURCES", false);
+    e.putBoolean("PREF_UPDATES_RUBY", false);
+    e.putBoolean("PREF_UPDATES_GEMS", false);
+    e.putBoolean("PREF_UPDATES_MSF", false);
+    if (!p.contains("MSF_RPC_SSL"))
+      e.putBoolean("MSF_RPC_SSL", true);
+    e.apply();
+  }
+
+  /** When false, Ruby/MSF binaries are not used; connect to external MSF RPC only. */
+  public static boolean usesBundledMsfResources() {
+    if (mContext == null)
+      return false;
+    return getSettings().getBoolean("MSF_USE_BUNDLED_RESOURCES", false);
+  }
+
   public static String getAppVersionName(){
     if(mApkVersion !=null)
       return mApkVersion;

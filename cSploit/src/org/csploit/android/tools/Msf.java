@@ -29,6 +29,10 @@ public class Msf extends Ruby {
 
   @Override
   public void setEnabled() {
+    if (!System.usesBundledMsfResources()) {
+      mEnabled = false;
+      return;
+    }
     super.setEnabled();
 
     mEnabled = mEnabled && (ExecChecker.msf().getRoot() != null ||

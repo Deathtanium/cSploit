@@ -64,6 +64,7 @@ public class CSploitApplication extends Application {
     super.onCreate();
 
     ACRA.init(this);
+    System.ensureNetHunterMsfDefaults(this);
     Services.init(this);
 
     // initialize the system

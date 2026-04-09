@@ -46,6 +46,10 @@ public class Ruby extends Tool {
   @Override
   public void setEnabled() {
     super.setEnabled();
+    if (!System.usesBundledMsfResources()) {
+      mEnabled = false;
+      return;
+    }
     mEnabled = mEnabled &&
             System.getSettings().getBoolean("MSF_ENABLED", true) &&
                     (ExecChecker.ruby().getRoot() != null ||
@@ -54,6 +58,7 @@ public class Ruby extends Tool {
 
   protected void registerSettingReceiver() {
     onSettingsChanged.addFilter("MSF_ENABLED");
+    onSettingsChanged.addFilter("MSF_USE_BUNDLED_RESOURCES");
     onSettingsChanged.addFilter("RUBY_DIR");
     System.registerSettingListener(onSettingsChanged);
   }
