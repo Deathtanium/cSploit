@@ -24,6 +24,7 @@ import android.content.SharedPreferences;
 
 import com.github.zafarkhaja.semver.Version;
 
+import org.csploit.android.core.BundledCoreInstaller;
 import org.csploit.android.core.*;
 import org.csploit.android.core.System;
 import org.csploit.android.net.GitHubParser;
@@ -107,6 +108,9 @@ public class UpdateChecker extends Thread
     Update update;
 
     try {
+      if (localVersion == null && BundledCoreInstaller.hasBundledCoreAsset(mContext)) {
+        return null;
+      }
 
       remoteVersion = GitHubParser.getCoreRepo().getLastReleaseVersion();
 

@@ -525,6 +525,27 @@ public class UpdateService extends IntentService
    * @throws NoSuchAlgorithmException when required digest algorithm is not available
    * @throws CancellationException when user cancelled the download via notification
    */
+  private void copyBundledCoreFromAssetsIfNeeded() throws IOException {
+    if (mCurrentTask == null || !mCurrentTask.copyFromBundledAsset || mCurrentTask.path == null) {
+      return;
+    }
+    File out = new File(mCurrentTask.path);
+    if (out.exists() && out.length() > 0) {
+      return;
+    }
+    InputStream in = null;
+    FileOutputStream fos = null;
+    try {
+      in = getAssets().open(BundledCoreInstaller.BUNDLED_CORE_ASSET_NAME);
+      fos = new FileOutputStream(out);
+      IOUtils.copy(in, fos);
+      Logger.info(String.format("copied bundled core asset to '%s'", mCurrentTask.path));
+    } finally {
+      IOUtils.closeQuietly(in);
+      IOUtils.closeQuietly(fos);
+    }
+  }
+
   private void downloadFile() throws SecurityException, KeyException, IOException, NoSuchAlgorithmException, CancellationException {
     if(mCurrentTask.url==null||mCurrentTask.path==null)
       return;
@@ -954,6 +975,7 @@ public class UpdateService extends IntentService
       setupNotification();
 
       mCurrentTask.errorOccurred = true;
+      copyBundledCoreFromAssetsIfNeeded();
       if (!haveLocalFile())
         downloadFile();
 
@@ -984,6 +1006,9 @@ public class UpdateService extends IntentService
       sendError(R.string.error_occured);
       System.errorLogging(e);
     } finally {
+      if(exitForError && mCurrentTask != null && mCurrentTask.copyFromBundledAsset) {
+        BundledCoreInstaller.resetBundledInstallStarted();
+      }
       if(exitForError) {
         if(mCurrentTask instanceof MsfUpdate)
           clearGemsCache();

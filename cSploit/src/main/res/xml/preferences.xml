@@ -64,21 +64,21 @@
             android:title="@string/pref_updates_core" />
 
         <SwitchPreferenceCompat
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:dependency="PREF_CHECK_UPDATES"
             android:key="PREF_UPDATES_RUBY"
             android:summary="@string/pref_updates_ruby_desc"
             android:title="@string/pref_updates_ruby" />
 
         <SwitchPreferenceCompat
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:dependency="PREF_CHECK_UPDATES"
             android:key="PREF_UPDATES_GEMS"
             android:summary="@string/pref_updates_gems_desc"
             android:title="@string/pref_updates_gems" />
 
         <SwitchPreferenceCompat
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:dependency="PREF_CHECK_UPDATES"
             android:key="PREF_UPDATES_MSF"
             android:summary="@string/pref_updates_msf_desc"
@@ -164,7 +164,7 @@
     <PreferenceCategory android:title="@string/pref_msf">
 
         <SwitchPreferenceCompat
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:key="MSF_ENABLED"
             android:summary="@string/pref_msf_enable_desc"
             android:title="@string/pref_msf_enable" />

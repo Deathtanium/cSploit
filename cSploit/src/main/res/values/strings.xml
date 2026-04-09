@@ -168,6 +168,8 @@
     <string name="missing_core_update">Core is not installed, the application will just check
         for updates. #STATUS#
     </string>
+    <string name="bundled_core_installing">Installing bundled core from the APK (first run). #STATUS#</string>
+    <string name="installing_bundled_core">Install bundled core</string>
     <string name="heart_attack_update">Heart attack occurred, the application will just check
         for updates. #STATUS#
     </string>
