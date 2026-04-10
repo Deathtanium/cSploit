@@ -32,7 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Process-based replacement for {@link Client#StartCommand} when NetHunter bridge is active.
+ * Process-based tool runner: {@code su} + NetHunter {@code bootkali_init} + {@code chroot}.
  */
 public final class NethunterChildRunner {
 

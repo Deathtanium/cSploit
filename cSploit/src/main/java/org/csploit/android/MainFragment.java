@@ -49,8 +49,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.csploit.android.core.Child;
-import org.csploit.android.core.Client;
-import org.csploit.android.core.CrashReporter;
 import org.csploit.android.core.Logger;
 import org.csploit.android.core.ManagedReceiver;
 import org.csploit.android.core.MultiAttackService;
@@ -86,7 +84,6 @@ import org.csploit.android.services.UpdateChecker;
 import org.csploit.android.services.UpdateService;
 import org.csploit.android.services.receivers.MsfRpcdServiceReceiver;
 import org.csploit.android.services.receivers.NetworkRadarReceiver;
-import org.csploit.android.update.CoreUpdate;
 import org.csploit.android.update.MsfUpdate;
 import org.csploit.android.update.RubyUpdate;
 import org.csploit.android.update.Update;
@@ -147,18 +144,6 @@ public class MainFragment extends Fragment {
                 new FatalDialog(getString(R.string.initialization_error),
                         message, message.contains(">"),
                         getActivity()).show();
-            }
-        });
-    }
-
-    private void onCoreUpdated() {
-        System.onCoreInstalled();
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                init();
-                startAllServices();
-                notifyMenuChanged();
             }
         });
     }
@@ -286,22 +271,6 @@ public class MainFragment extends Fragment {
             try {
                 System.initCore();
                 mIsDaemonBeating = true;
-
-                if (!System.isNethunterToolBridge()) {
-                    try {
-                        if (Client.hadCrashed()) {
-                            Logger.warning("Client has previously crashed, building a crash report.");
-                            CrashReporter.notifyNativeLibraryCrash();
-                            onInitializationError(getString(R.string.JNI_crash_detected));
-                            return;
-                        }
-                    } catch (Throwable t) {
-                        Logger.debug("JNI hadCrashed: " + t.getMessage());
-                    }
-                }
-            } catch (UnsatisfiedLinkError e) {
-                onInitializationError("hi developer, you missed to build JNI stuff, thanks for playing with me :)");
-                return;
             } catch (System.SuException e) {
                 onInitializationError(getString(R.string.only_4_root));
                 return;
@@ -1180,7 +1149,7 @@ public class MainFragment extends Fragment {
         }
 
         private void onUpdateAvailable(Update update) {
-            onUpdateAvailable(update, (update instanceof CoreUpdate) && !System.isCoreInstalled());
+            onUpdateAvailable(update, false);
         }
 
         private void onUpdateDone(Update update) {
@@ -1193,10 +1162,6 @@ public class MainFragment extends Fragment {
                 startRPCServer();
             }
 
-            if (update instanceof CoreUpdate) {
-                onCoreUpdated();
-            }
-
             // restart update checker after a successful update
             startUpdateChecker();
         }
@@ -1204,11 +1169,6 @@ public class MainFragment extends Fragment {
         private void onUpdateError(final Update update, final int message) {
 
             mIsUpdateDownloading = false;
-
-            if (update instanceof CoreUpdate) {
-                onInitializationError(getString(message));
-                return;
-            }
 
             getActivity().runOnUiThread(new Runnable() {
                 @Override

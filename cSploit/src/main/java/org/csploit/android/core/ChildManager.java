@@ -1,7 +1,6 @@
 package org.csploit.android.core;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -17,7 +16,7 @@ import org.csploit.android.events.StderrNewline;
  * a class that manage spawned commands
  *
  * it take care of handle ChildEnd, ChildDied events.
- * also give some key methods that add an extra abstraction layer between callers and the dSploitd client.
+ * also give some key methods that add an extra abstraction layer between callers and {@link NethunterChildRunner}.
  */
 public class ChildManager {
 
@@ -85,46 +84,18 @@ public class ChildManager {
   public static Child async(String handler, String cmd, String[] env, EventReceiver receiver) throws ChildNotStartedException {
     Child c = new Child();
 
-    if (System.isNethunterToolBridge()) {
-      c.id = NethunterChildRunner.allocateChildId();
-      c.running = true;
-      c.receiver = receiver;
-      synchronized (children) {
-        children.add(c);
-        children.notifyAll();
-      }
-      if (c.receiver != null) {
-        c.receiver.onStart(cmd);
-      }
-      NethunterChildRunner.spawn(c.id, handler, cmd, env, receiver);
-      Logger.debug(String.format("{ handler='%s', cmd='%s' } => nh %d", handler, cmd, c.id));
-      return c;
-    }
-
-    try {
-      c.id = Client.StartCommand(handler, cmd, env);
-    } catch (UnsatisfiedLinkError e) {
-      Logger.error("JNI StartCommand: " + e.getMessage());
-      c.id = -1;
-    }
-    if (c.id == -1) {
-      Logger.debug(String.format("{ handler='%s', cmd='%s' } => FAILED", handler, cmd));
-      throw new ChildNotStartedException();
-    }
-
-    Logger.debug(String.format("{ handler='%s', cmd='%s' } => %d", handler, cmd, c.id));
-
+    c.id = NethunterChildRunner.allocateChildId();
     c.running = true;
     c.receiver = receiver;
-
-    if(c.receiver!=null)
-      c.receiver.onStart(cmd);
-
     synchronized (children) {
       children.add(c);
       children.notifyAll();
     }
-
+    if (c.receiver != null) {
+      c.receiver.onStart(cmd);
+    }
+    NethunterChildRunner.spawn(c.id, handler, cmd, env, receiver);
+    Logger.debug(String.format("{ handler='%s', cmd='%s' } => nh %d", handler, cmd, c.id));
     return c;
   }
 
@@ -143,17 +114,6 @@ public class ChildManager {
         children.wait();
       }
     }
-  }
-
-  public static void storeHandlers() {
-    String [] result = Client.getHandlers();
-
-    if(result==null) {
-      handlers = null;
-      return;
-    }
-
-    handlers = Arrays.asList(result);
   }
 
   /**

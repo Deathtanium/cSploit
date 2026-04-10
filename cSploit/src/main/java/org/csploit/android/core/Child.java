@@ -34,7 +34,7 @@ public class Child {
 
     /**
      * callback function called whence the child exit
-     * @param exitValue the child exit value
+     * @param exitValue the command exit status
      */
     public void onEnd(int exitValue) { }
 
@@ -62,15 +62,7 @@ public class Child {
    * @param data the bytes to send
    */
   public synchronized void send(byte[] data) throws IOException {
-    if (NethunterChildRunner.isNethunterChildId(this.id)) {
-      throw new IOException("cannot send bytes to NetHunter child process");
-    }
-    try {
-      if(!Client.SendTo(this.id, data))
-        throw new IOException("cannot send bytes to child");
-    } catch (UnsatisfiedLinkError e) {
-      throw new IOException("JNI send unavailable", e);
-    }
+    throw new IOException("stdin to NetHunter tool processes is not supported");
   }
 
   /**
@@ -86,14 +78,7 @@ public class Child {
    * @param signal the signal to send
    */
   public void kill(int signal) {
-    if (NethunterChildRunner.tryKill(this.id, signal)) {
-      return;
-    }
-    try {
-      Client.Kill(this.id, signal);
-    } catch (UnsatisfiedLinkError e) {
-      org.csploit.android.core.Logger.error("JNI Kill unavailable: " + e.getMessage());
-    }
+    NethunterChildRunner.tryKill(this.id, signal);
   }
 
   /**

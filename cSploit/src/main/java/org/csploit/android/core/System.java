@@ -62,7 +62,6 @@ import org.csploit.android.tools.ToolBox;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -257,106 +256,16 @@ public class System {
     }
   }
 
-  private static void startCoreDaemon() throws SuException, DaemonException {
-    boolean access_granted = false;
-    DataOutputStream writer = null;
-    BufferedReader reader = null;
-    String line;
-    int ret = -1;
-
-    try {
-      Process shell = Runtime.getRuntime().exec("su");
-      writer = new DataOutputStream(shell.getOutputStream());
-      String cmd;
-
-      cmd = String.format("{ echo 'ACCESS GRANTED' >&2; cd '%s' && exec ./start_daemon.sh ;} || exit 1\n",
-              System.getCorePath());
-
-      writer.write(cmd.getBytes());
-      writer.flush();
-
-      ret = shell.waitFor();
-
-      if (ret != 0) {
-        reader = new BufferedReader(new InputStreamReader(shell.getErrorStream()));
-
-        while ((line = reader.readLine()) != null) {
-          if (line.equals("ACCESS GRANTED")) {
-            access_granted = true;
-            Logger.debug("'ACCESS GRANTED' found");
-          } else
-            Logger.warning("STDERR: " + line);
-        }
-      } else
-        access_granted = true;
-
-    } catch (IOException e) {
-      // command "su" not found or cannot write to it's stdin
-      Logger.error(e.getMessage());
-    } catch (InterruptedException e) {
-      // interrupted while waiting for shell exit value
-      Logger.error(e.getMessage());
-    } finally {
-      if (writer != null)
-        try {
-          writer.close();
-        } catch (IOException ignored) {
-        }
-      if (reader != null)
-        try {
-          reader.close();
-        } catch (IOException ignored) {
-        }
-    }
-
-    mKnownIssues.fromFile(String.format("%s/issues", getCorePath()));
-
-    if (!access_granted)
-      throw new SuException();
-
-    if (ret != 0) {
-      File log = new File(System.getCorePath(), "cSploitd.log");
-      DaemonException daemonException = new DaemonException("core daemon returned " + ret);
-   /*   if (log.exists() && log.canRead()) {
-        ACRAConfiguration conf = ACRA.getConfig();
-        conf.setApplicationLogFile(log.getAbsolutePath());
-        ACRA.setConfig(conf);
-        ACRA.getErrorReporter().handleException(daemonException, false);
-      }*/
-      throw daemonException;
-    }
-  }
-
   /**
-   * shutdown the core daemon
+   * Stops NetHunter-backed tool runtime state (no cSploitd process).
    */
   public static void shutdownCoreDaemon() {
-    if (mNethunterToolBridge) {
-      mCoreInitialized = false;
-      mNethunterToolBridge = false;
-      Services.getNetworkRadar().onAutoScanChanged();
-      return;
-    }
-    try {
-      if (!Client.isConnected() && !Client.Connect(getCorePath() + "/cSploitd.sock")) {
-        return; // daemon is not running
-      }
-      if (!Client.isAuthenticated() && !Client.Login("android", "DEADBEEF")) {
-        Logger.error("cannot login to daemon");
-      }
-      Client.Shutdown();
-      Client.Disconnect();
-    } catch (UnsatisfiedLinkError e) {
-      Logger.error("shutdownCoreDaemon: " + e.getMessage());
-    }
-
     mCoreInitialized = false;
+    mNethunterToolBridge = false;
     Services.getNetworkRadar().onAutoScanChanged();
   }
 
-  /**
-   * True when the app uses NetHunter Kali chroot for tool execution (no downloaded cSploit core tarball).
-   */
+  /** Tools always run in the NetHunter Kali chroot ({@link NethunterChildRunner}). */
   public static boolean isNethunterToolBridge() {
     return mNethunterToolBridge;
   }
@@ -367,67 +276,14 @@ public class System {
       return;
 
     SharedPreferences pref = getSettings();
-    boolean nhProbe = NetHunterRuntime.probeChroot(mContext, pref);
-    boolean legacyCore = new File(getCorePath() + "/VERSION").exists();
-    String mode = NetHunterRuntime.backendMode(pref);
-
-    boolean useNh = false;
-    if ("nethunter".equals(mode)) {
-      useNh = nhProbe;
-      if (!nhProbe) {
-        throw new DaemonException("NetHunter backend selected but Kali chroot was not found (see chroot path in settings).");
-      }
-    } else if ("legacy".equals(mode)) {
-      useNh = false;
-      if (!legacyCore) {
-        throw new DaemonException("Legacy core selected but " + getCorePath() + "/VERSION is missing.");
-      }
-    } else {
-      // auto: prefer NetHunter when the chroot exists, else legacy tarball
-      useNh = nhProbe;
-      if (!useNh && !legacyCore) {
-        throw new DaemonException("No tool backend: install NetHunter Kali chroot or extract the legacy cSploit core into the app files directory.");
-      }
+    if (!NetHunterRuntime.probeChroot(mContext, pref)) {
+      throw new DaemonException("Kali chroot not found. Install NetHunter and ensure the path in settings matches (e.g. /data/local/nhsystem/kali-arm64). See docs/NETHUNTER_PACKAGES.md.");
     }
 
-    if (useNh) {
-      NethunterChildRunner.init(mContext);
-      mNethunterToolBridge = true;
-      ChildManager.storeHandlersFromNethunter();
-      reloadTools();
-      mCoreInitialized = true;
-      Services.getNetworkRadar().onAutoScanChanged();
-      getNetwork().onCoreAttached();
-      return;
-    }
-
-    mNethunterToolBridge = false;
-    String socket_path = getCorePath() + "/cSploitd.sock";
-
-    try {
-      if (!Client.isConnected()) {
-        if (!Client.Connect(socket_path)) {
-          startCoreDaemon();
-          if (!Client.Connect(socket_path))
-            throw new DaemonException("cannot connect to core daemon");
-        }
-      }
-
-      if (!Client.isAuthenticated() && !Client.Login("android", "DEADBEEF")) {
-        throw new DaemonException("cannot login to core daemon");
-      }
-
-      if (!Client.LoadHandlers()) {
-        throw new DaemonException("cannot load handlers");
-      }
-    } catch (UnsatisfiedLinkError e) {
-      throw new DaemonException("JNI client not available: " + e.getMessage());
-    }
-
-    ChildManager.storeHandlers();
-
+    NethunterChildRunner.init(mContext);
+    mNethunterToolBridge = true;
+    ChildManager.storeHandlersFromNethunter();
     reloadTools();
-
     mCoreInitialized = true;
     Services.getNetworkRadar().onAutoScanChanged();
     getNetwork().onCoreAttached();
@@ -782,12 +638,10 @@ public class System {
   }
 
   /**
-   * get currently installed core version
-   *
-   * @return the version of the core, null if not present.
+   * Legacy label for crash reports; tools run from NetHunter chroot, not a downloaded core tarball.
    */
   public static String getCoreVersion() {
-    return readFirstLine(getCorePath() + "/VERSION");
+    return "nethunter-chroot";
   }
 
   /**
@@ -1132,17 +986,7 @@ public class System {
   }
 
   public static boolean isCoreInstalled() {
-    SharedPreferences pref = getSettings();
-    boolean nhProbe = NetHunterRuntime.probeChroot(mContext, pref);
-    boolean legacyCore = new File(getCorePath() + "/VERSION").exists();
-    String mode = NetHunterRuntime.backendMode(pref);
-    if ("nethunter".equals(mode)) {
-      return nhProbe;
-    }
-    if ("legacy".equals(mode)) {
-      return legacyCore;
-    }
-    return nhProbe || legacyCore;
+    return NetHunterRuntime.probeChroot(mContext, getSettings());
   }
 
   public static boolean isCoreInitialized() {
@@ -1374,11 +1218,6 @@ public class System {
         mTargets.clear();
       }
 
-      try {
-        Client.Disconnect();
-      } catch (UnsatisfiedLinkError e) {
-        Logger.debug("clean: JNI disconnect skipped");
-      }
       mCoreInitialized = false;
       mNethunterToolBridge = false;
       mInitialized = false;

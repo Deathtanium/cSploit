@@ -60,7 +60,7 @@ import java.net.NoRouteToHostException;
         resCommentPrompt = R.string.crash_dialog_comment
 )
 
-@AcraCore(applicationLogFile = "/cSploitd.log")
+@AcraCore(applicationLogFile = "csploit.log")
 
 public class CSploitApplication extends Application {
 

@@ -46,7 +46,6 @@ import org.apache.commons.compress.utils.CountingInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.csploit.android.R;
 import org.csploit.android.core.*;
-import org.csploit.android.update.CoreUpdate;
 import org.csploit.android.update.MsfUpdate;
 import org.csploit.android.update.Update;
 import org.csploit.android.update.Update.archiveAlgorithm;
@@ -1020,9 +1019,6 @@ public class UpdateService extends Service
       if (!haveLocalFile())
         downloadFile();
 
-      if (mCurrentTask instanceof CoreUpdate)
-        System.shutdownCoreDaemon();
-
       extract();
 
       if (mCurrentTask instanceof MsfUpdate)
@@ -1050,8 +1046,7 @@ public class UpdateService extends Service
       if(exitForError) {
         if(mCurrentTask instanceof MsfUpdate)
           clearGemsCache();
-        if(!(mCurrentTask instanceof CoreUpdate))
-          wipe();
+        wipe();
       }
       mRunning = false;
     }

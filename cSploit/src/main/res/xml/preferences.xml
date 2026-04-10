@@ -40,14 +40,6 @@
             android:summary="@string/pref_auto_portscan_desc"
             android:title="@string/pref_auto_portscan" />
 
-        <ListPreference
-            android:defaultValue="auto"
-            android:entries="@array/pref_nethunter_backend_labels"
-            android:entryValues="@array/pref_nethunter_backend_values"
-            android:key="PREF_NETHUNTER_BACKEND"
-            android:summary="@string/pref_nethunter_desc"
-            android:title="@string/pref_nethunter_title" />
-
         <EditTextPreference
             android:defaultValue="/data/local/nhsystem/kali-arm64"
             android:key="PREF_CHROOT_DIR"
@@ -69,13 +61,6 @@
             android:key="PREF_UPDATES_APP"
             android:summary="@string/pref_updates_app_desc"
             android:title="@string/pref_updates_app" />
-
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:dependency="PREF_CHECK_UPDATES"
-            android:key="PREF_UPDATES_CORE"
-            android:summary="@string/pref_updates_core_desc"
-            android:title="@string/pref_updates_core" />
 
         <SwitchPreferenceCompat
             android:defaultValue="true"

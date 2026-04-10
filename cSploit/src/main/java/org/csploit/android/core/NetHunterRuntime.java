@@ -21,9 +21,6 @@ import java.util.List;
  */
 public final class NetHunterRuntime {
 
-  /** {@code auto} | {@code nethunter} | {@code legacy} */
-  public static final String PREF_NETHUNTER_BACKEND = "PREF_NETHUNTER_BACKEND";
-
   private static final String DEFAULT_CHROOT = "/data/local/nhsystem/kali-arm64";
   private static final String NETHUNTER_PACKAGE = "com.offsec.nethunter";
 
@@ -74,15 +71,6 @@ public final class NetHunterRuntime {
 
   public static String getChrootDir(SharedPreferences pref) {
     return pref.getString("PREF_CHROOT_DIR", DEFAULT_CHROOT);
-  }
-
-  /**
-   * Backend selection: auto → nethunter when chroot + bash exist; else legacy VERSION file.
-   */
-  public static String backendMode(SharedPreferences pref) {
-    String v = pref.getString(PREF_NETHUNTER_BACKEND, "auto");
-    if (v == null || v.isEmpty()) return "auto";
-    return v;
   }
 
   public static boolean probeChroot(Context ctx, SharedPreferences pref) {

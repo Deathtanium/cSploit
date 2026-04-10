@@ -29,7 +29,6 @@ import org.csploit.android.core.System;
 import org.csploit.android.net.GitHubParser;
 import org.csploit.android.services.UpdateService;
 import org.csploit.android.update.ApkUpdate;
-import org.csploit.android.update.CoreUpdate;
 import org.csploit.android.update.MsfUpdate;
 import org.csploit.android.update.RubyUpdate;
 import org.csploit.android.update.Update;
@@ -97,54 +96,6 @@ public class UpdateChecker extends Thread
     } catch(Exception e){
       System.errorLogging(e);
     }
-    return null;
-  }
-
-  private Update getCoreUpdate() {
-    if (System.isNethunterToolBridge()) {
-      return null;
-    }
-    String localVersion = System.getCoreVersion();
-    String platform = System.getPlatform();
-    String remoteVersion, remoteURL;
-    Update update;
-
-    try {
-
-      remoteVersion = GitHubParser.getCoreRepo().getLastReleaseVersion();
-
-      if(remoteVersion == null)
-        return null;
-
-      remoteURL = GitHubParser.getCoreRepo().getLastReleaseAssetUrl(platform + ".");
-
-      if(remoteURL == null) {
-        Logger.warning(String.format("unsupported platform ( %s )", platform));
-        platform = System.getCompatiblePlatform();
-        Logger.debug(String.format("trying with '%s'", platform));
-
-        remoteURL = GitHubParser.getCoreRepo().getLastReleaseAssetUrl(platform + ".");
-      }
-
-      Logger.debug(String.format("localVersion   = %s", localVersion));
-      Logger.debug(String.format("remoteVersion  = %s", remoteVersion));
-
-      if(remoteURL == null) {
-        Logger.warning(String.format("unsupported platform ( %s )", platform));
-        return null;
-      }
-
-      update = new CoreUpdate(mContext, remoteURL, remoteVersion);
-
-      if(localVersion == null)
-        return update;
-
-      if(isNewerThan(remoteVersion, localVersion ))
-        return update;
-    } catch(Exception e){
-      System.errorLogging(e);
-    }
-
     return null;
   }
 
@@ -231,8 +182,6 @@ public class UpdateChecker extends Thread
 
     boolean checkApp = prefs.getBoolean("PREF_UPDATES_APP", true);
 
-    boolean checkCore = prefs.getBoolean("PREF_UPDATES_CORE", true);
-
     boolean canCheckMsf = System.isCoreInitialized() && prefs.getBoolean("MSF_ENABLED", true);
 
     boolean checkRuby = canCheckMsf && prefs.getBoolean("PREF_UPDATES_RUBY", true);
@@ -244,9 +193,6 @@ public class UpdateChecker extends Thread
 
     if(checkApp)
       update = getApkUpdate();
-
-    if(update == null && checkCore)
-      update = getCoreUpdate();
 
     if(update == null && checkRuby)
       update = getRubyUpdate();

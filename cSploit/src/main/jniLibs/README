@@ -1,7 +1,1 @@
-Add prebuilt jni libraries here:
-
-./armeabi-v7a/libcSploitClient.so
-./armeabi-v7a/libcSploitCommon.so
-./armeabi/libcSploitClient.so
-./armeabi/libcSploitCommon.so
-etc.
+Legacy cSploit JNI (`libcSploitClient` / `libcSploitCommon`) is no longer used. Tools run only via NetHunter Kali chroot (`NethunterChildRunner`). This directory may be empty.
