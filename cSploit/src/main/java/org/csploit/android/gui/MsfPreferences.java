@@ -1,5 +1,6 @@
 package org.csploit.android.gui;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
@@ -10,6 +11,7 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
 import android.text.InputType;
 import android.util.Patterns;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import org.csploit.android.R;
@@ -203,8 +205,13 @@ public class MsfPreferences extends PreferenceActivity {
           break;
       }
 
-      if(inputType!=0)
-        ((EditTextPreference)item).getEditText().setInputType(inputType);
+      if (item instanceof EditTextPreference) {
+        EditTextPreference etp = (EditTextPreference) item;
+        if (inputType != 0) {
+          etp.getEditText().setInputType(inputType);
+        }
+        applyReadableDialogEditTextStyle(etp);
+      }
 
       if(opt.isAdvanced())
         advanced.add(item);
@@ -242,5 +249,13 @@ public class MsfPreferences extends PreferenceActivity {
     }
 
     return root;
+  }
+
+  private void applyReadableDialogEditTextStyle(EditTextPreference etp) {
+    EditText et = etp.getEditText();
+    et.setTextColor(0xDE000000);
+    et.setHintTextColor(0x99000000);
+    et.setHighlightColor(Color.argb(64, 0x3F, 0x9F, 0xE0));
+    et.setBackgroundResource(R.drawable.edit_text_dialog_border);
   }
 }

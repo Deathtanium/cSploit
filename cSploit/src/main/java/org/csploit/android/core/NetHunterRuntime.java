@@ -208,6 +208,7 @@ public final class NetHunterRuntime {
     h.add("arpspoof");
     h.add("ettercap");
     h.add("msfrpcd");
+    h.add("msfconsole");
     h.add("network-radar");
     h.add("fusemounts");
     return h;
@@ -215,5 +216,93 @@ public final class NetHunterRuntime {
 
   public static SharedPreferences defaultPrefs(Context ctx) {
     return PreferenceManager.getDefaultSharedPreferences(ctx);
+  }
+
+  /**
+   * Whether something inside the chroot accepts TCP on 127.0.0.1:port (e.g. msfrpcd).
+   * Uses bash /dev/tcp or nc; best-effort with a short wall timeout.
+   */
+  public static boolean isTcpOpenOnChrootLoopback(Context ctx, int port) {
+    if (port < 1 || port > 65535) {
+      return false;
+    }
+    SharedPreferences p = defaultPrefs(ctx);
+    if (!probeChroot(ctx, p)) {
+      return false;
+    }
+    String chroot = getChrootDir(p);
+    String bootkali = resolveBootkaliInit(ctx);
+    String body = "( exec 3<>/dev/tcp/127.0.0.1/" + port + " ) 2>/dev/null || "
+        + "{ command -v nc>/dev/null && nc -z -w1 127.0.0.1 " + port + "; }";
+    String inner = "bash -lc '" + escapeForSingleQuotedBash(body) + "'";
+    String full = chrootOneShot(bootkali, chroot, inner);
+    prepareBootkaliIfNeeded(bootkali, full);
+    Process proc = null;
+    try {
+      proc = execSuOneShotMerged(full);
+      long deadline = java.lang.System.currentTimeMillis() + 4000L;
+      while (proc.isAlive() && java.lang.System.currentTimeMillis() < deadline) {
+        try {
+          Thread.sleep(80);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          break;
+        }
+      }
+      if (proc.isAlive()) {
+        proc.destroy();
+        return false;
+      }
+      return proc.waitFor() == 0;
+    } catch (Exception e) {
+      Logger.debug("isTcpOpenOnChrootLoopback: " + e.getMessage());
+      return false;
+    } finally {
+      if (proc != null) {
+        proc.destroy();
+      }
+    }
+  }
+
+  /**
+   * Best-effort: stop listeners on {@code port} inside chroot, then {@code pkill} {@code msfrpcd}.
+   */
+  public static void stopMsfrpcdInChroot(Context ctx, int port) {
+    if (port < 1 || port > 65535) {
+      return;
+    }
+    SharedPreferences p = defaultPrefs(ctx);
+    if (!probeChroot(ctx, p)) {
+      return;
+    }
+    String chroot = getChrootDir(p);
+    String bootkali = resolveBootkaliInit(ctx);
+    String body = "command -v fuser>/dev/null && fuser -k " + port + "/tcp 2>/dev/null; "
+        + "command -v pkill>/dev/null && pkill -x msfrpcd 2>/dev/null; true";
+    String inner = "bash -lc '" + escapeForSingleQuotedBash(body) + "'";
+    String full = chrootOneShot(bootkali, chroot, inner);
+    prepareBootkaliIfNeeded(bootkali, full);
+    Process proc = null;
+    try {
+      proc = execSuOneShotMerged(full);
+      long deadline = java.lang.System.currentTimeMillis() + 12000L;
+      while (proc.isAlive() && java.lang.System.currentTimeMillis() < deadline) {
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          break;
+        }
+      }
+      if (proc.isAlive()) {
+        proc.destroy();
+      }
+    } catch (Exception e) {
+      Logger.debug("stopMsfrpcdInChroot: " + e.getMessage());
+    } finally {
+      if (proc != null) {
+        proc.destroy();
+      }
+    }
   }
 }

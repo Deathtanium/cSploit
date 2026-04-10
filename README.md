@@ -12,6 +12,7 @@ This tree is an **independent fork** for a **modern Android port** (see root `AG
 - **Toasts:** **`ToastHelper`** wraps toasts with a **light overlay** where needed so messages are not white-on-white on dark activities.
 - **Notifications:** Builders avoid **forced colorized** styling that produced unreadable contrast in places.
 - **Alert dialogs:** **`Theme.CSploit.AlertDialog`** plus **`alertDialogTheme`** on app themes fixes **positive button (OK) text** inheriting the activity’s white `textColorPrimary` on a light dialog background.
+- **Metasploit on NetHunter:** **`getLocalMsfVersion()`** reports a sentinel when the tool bridge uses the chroot so **MSF RPCD** can start from Kali’s `msfrpcd` (same RPC/MessagePack UI as before). A **`msfconsole`** child handler exists for future **non-RPC** automation (`exec msfconsole …`); replacing every RPC call with parsed `msfconsole` output is not done yet.
 
 ---
 

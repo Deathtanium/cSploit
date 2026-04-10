@@ -680,6 +680,9 @@ public class System {
    * @return the version of installed MetaSploit Framework
    */
   public static String getLocalMsfVersion() {
+    if (isNethunterToolBridge()) {
+      return "nethunter-chroot";
+    }
     return readFirstLine(getMsfPath() + "/VERSION");
   }
 

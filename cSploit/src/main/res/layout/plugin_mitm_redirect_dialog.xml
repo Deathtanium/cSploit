@@ -57,6 +57,7 @@
             android:layout_below="@+id/linearLayout1">
 
         <EditText
+                style="@style/Widget.CSploit.EditText.Dialog"
                 android:id="@+id/redirAddress"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
@@ -68,6 +69,7 @@
         </EditText>
 
         <EditText
+                style="@style/Widget.CSploit.EditText.Dialog"
                 android:id="@+id/redirPort"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"

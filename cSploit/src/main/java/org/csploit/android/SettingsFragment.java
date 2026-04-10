@@ -18,51 +18,31 @@
  */
 package org.csploit.android;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import org.csploit.android.core.ChildManager;
-import org.csploit.android.core.ExecChecker;
-import org.csploit.android.core.Logger;
 import org.csploit.android.core.System;
-import org.csploit.android.helpers.ContextReceiverCompat;
 import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.gui.DirectoryPicker;
-import org.csploit.android.gui.dialogs.ChoiceDialog;
-import org.csploit.android.gui.dialogs.ConfirmDialog;
-import org.csploit.android.net.GitHubParser;
 import org.csploit.android.services.Services;
-import org.csploit.android.tools.Raw;
-import org.json.JSONException;
-
-import java.io.File;
-import java.io.IOException;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.EditTextPreference;
-import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceGroup;
 import androidx.preference.TwoStatePreference;
 
 public class SettingsFragment extends Fragment {
 
-
     public static final int SETTINGS_DONE = 1285;
-    public static final String SETTINGS_WIPE_START = "SettingsActivity.WIPE_START";
-    public static final String SETTINGS_WIPE_DIR = "SettingsActivity.data.WIPE_DIR";
-    public static final String SETTINGS_WIPE_DONE = "SettingsActivity.WIPE_DONE";
-    public static final String SETTINGS_MSF_CHANGED = "SettingsActivity.MSF_CHANGED";
-    public static final String SETTINGS_MSF_BRANCHES_AVAILABLE = "SettingsActivity.MSF_MSF_BRANCHES_AVAILABLE";
 
     @SuppressWarnings("ConstantConditions")
     @Override
@@ -73,14 +53,9 @@ public class SettingsFragment extends Fragment {
                 .commit();
     }
 
-
-        public static class PrefsFrag extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener {
-
+    public static class PrefsFrag extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener {
 
         private Preference mSavePath = null;
-        private Preference mWipeMSF = null;
-        private Preference mRubyDir = null;
-        private Preference mMsfDir = null;
         private EditTextPreference mSnifferSampleTime = null;
         private EditTextPreference mProxyPort = null;
         private EditTextPreference mServerPort = null;
@@ -90,32 +65,24 @@ public class SettingsFragment extends Fragment {
         private EditTextPreference mPasswordFilename = null;
         private TwoStatePreference mThemeChooser = null;
         private TwoStatePreference mMsfEnabled = null;
-        private ListPreference mMsfBranch = null;
-        private int mMsfSize = 0;
-        private BroadcastReceiver mReceiver = null;
-        private Thread mBranchesWaiter = null;
 
-            @Override
-            public void onViewCreated(View v, Bundle savedInstanceState) {
-                super.onViewCreated(v, savedInstanceState);
-                SharedPreferences themePrefs = getActivity().getSharedPreferences("THEME", 0);
-                Boolean isDark = themePrefs.getBoolean("isDark", false);
-                if (isDark) {
-                    v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window_dark));
-                } else {
-                    v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window));
-                }
+        @Override
+        public void onViewCreated(View v, Bundle savedInstanceState) {
+            super.onViewCreated(v, savedInstanceState);
+            SharedPreferences themePrefs = getActivity().getSharedPreferences("THEME", 0);
+            Boolean isDark = themePrefs.getBoolean("isDark", false);
+            if (isDark) {
+                v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window_dark));
+            } else {
+                v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window));
             }
-
+        }
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
 
             mSavePath = getPreferenceScreen().findPreference("PREF_SAVE_PATH");
-            mWipeMSF = getPreferenceScreen().findPreference("PREF_MSF_WIPE");
-            mRubyDir = getPreferenceScreen().findPreference("RUBY_DIR");
-            mMsfDir = getPreferenceScreen().findPreference("MSF_DIR");
             mMsfPort = (EditTextPreference) getPreferenceScreen().findPreference("MSF_RPC_PORT");
             mSnifferSampleTime = (EditTextPreference) getPreferenceScreen().findPreference("PREF_SNIFFER_SAMPLE_TIME");
             mProxyPort = (EditTextPreference) getPreferenceScreen().findPreference("PREF_HTTP_PROXY_PORT");
@@ -124,11 +91,11 @@ public class SettingsFragment extends Fragment {
             mHttpBufferSize = (EditTextPreference) getPreferenceScreen().findPreference("PREF_HTTP_MAX_BUFFER_SIZE");
             mPasswordFilename = (EditTextPreference) getPreferenceScreen().findPreference("PREF_PASSWORD_FILENAME");
             mThemeChooser = (TwoStatePreference) getPreferenceScreen().findPreference("PREF_DARK_THEME");
-            mMsfBranch = (ListPreference) getPreferenceScreen().findPreference("MSF_BRANCH");
             mMsfEnabled = (TwoStatePreference) getPreferenceScreen().findPreference("MSF_ENABLED");
 
-            mThemeChooser.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            bindReadableDialogEditTexts(getPreferenceScreen());
 
+            mThemeChooser.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     SharedPreferences themePrefs = getActivity().getBaseContext().getSharedPreferences("THEME", 0);
@@ -145,9 +112,26 @@ public class SettingsFragment extends Fragment {
                     return true;
                 }
             });
+        }
 
-            if (mMsfEnabled.isEnabled())
-                onMsfEnabled();
+        /**
+         * EditTextPreference binds its field with the activity theme; in dark mode that yields
+         * unreadable light text on the light alert surface. Force dialog-field colors on bind.
+         */
+        private void bindReadableDialogEditTexts(Preference pref) {
+            if (pref instanceof EditTextPreference) {
+                ((EditTextPreference) pref).setOnBindEditTextListener(editText -> {
+                    editText.setTextColor(0xDE000000);
+                    editText.setHintTextColor(0x99000000);
+                    editText.setHighlightColor(Color.argb(64, 0x3F, 0x9F, 0xE0));
+                    editText.setBackgroundResource(R.drawable.edit_text_dialog_border);
+                });
+            } else if (pref instanceof PreferenceGroup) {
+                PreferenceGroup group = (PreferenceGroup) pref;
+                for (int i = 0; i < group.getPreferenceCount(); i++) {
+                    bindReadableDialogEditTexts(group.getPreference(i));
+                }
+            }
         }
 
         @Override
@@ -155,127 +139,25 @@ public class SettingsFragment extends Fragment {
             addPreferencesFromResource(R.xml.preferences);
         }
 
-        private void wipe_prompt() {
-            String message = getString(R.string.pref_msfwipe_message);
-            if (mMsfSize > 0) {
-                message += "\n" + String.format(getString(R.string.pref_msfwipe_size), mMsfSize);
-            }
-            new ConfirmDialog(getString(R.string.warning), message, getActivity(), new ConfirmDialog.ConfirmDialogListener() {
-                @Override
-                public void onConfirm() {
-                    getActivity().sendBroadcast(new Intent(SETTINGS_WIPE_START));
-                }
-
-                @Override
-                public void onCancel() {
-
-                }
-            }).show();
-        }
-
-        private void wipe_prompt_older(final File oldDir) {
-            new ConfirmDialog(getString(R.string.warning), getString(R.string.delete_previous_location), getActivity(), new ConfirmDialog.ConfirmDialogListener() {
-                @Override
-                public void onConfirm() {
-                    Intent i = new Intent(SETTINGS_WIPE_START);
-                    i.putExtra(SETTINGS_WIPE_DIR, oldDir.getAbsolutePath());
-                    getActivity().sendBroadcast(i);
-                }
-
-                @Override
-                public void onCancel() {
-
-                }
-            }).show();
-        }
-
-        private void measureMsfSize() {
-            try {
-                System.getTools().raw.async(String.format("du -xsm '%s' '%s'", System.getRubyPath(), System.getMsfPath()),
-                        new Raw.RawReceiver() {
-                            private int size = 0;
-
-                            @SuppressWarnings("StatementWithEmptyBody")
-                            @Override
-                            public void onNewLine(String line) {
-                                if (line.isEmpty())
-                                    return;
-                                try {
-                                    int start, end;
-                                    for (start = 0; start < line.length() && java.lang.Character.isSpaceChar(line.charAt(start)); start++)
-                                        ;
-                                    for (end = start + 1; end < line.length() && java.lang.Character.isDigit(line.charAt(end)); end++)
-                                        ;
-                                    size += Integer.parseInt(line.substring(start, end));
-                                } catch (Exception e) {
-                                    System.errorLogging(e);
-                                }
-                            }
-
-                            @Override
-                            public void onEnd(int exitCode) {
-                                if (exitCode == 0)
-                                    mMsfSize = size;
-                            }
-                        });
-            } catch (ChildManager.ChildNotStartedException e) {
-                Logger.error(e.getMessage());
-            }
-        }
-
         @Override
         public void onActivityResult(int requestCode, int resultCode, Intent intent) {
             if (requestCode == DirectoryPicker.PICK_DIRECTORY && resultCode != AppCompatActivity.RESULT_CANCELED) {
-                Bundle extras = intent.getExtras();
-                String path;
-                String key;
-                File folder;
-                String oldPath = null;
-
+                android.os.Bundle extras = intent.getExtras();
                 if (extras == null) {
-                    Logger.debug("null extra: " + intent);
                     return;
                 }
-
-                path = (String) extras.get(DirectoryPicker.CHOSEN_DIRECTORY);
-                key = (String) extras.get(DirectoryPicker.AFFECTED_PREF);
-
+                String path = extras.getString(DirectoryPicker.CHOSEN_DIRECTORY);
+                String key = extras.getString(DirectoryPicker.AFFECTED_PREF);
                 if (path == null || key == null) {
-                    Logger.debug("null path or key: " + intent);
                     return;
                 }
-
-                folder = new File(path);
-                ExecChecker checker = null;
-
-
-                if (key.equals("RUBY_DIR")) {
-                    oldPath = System.getRubyPath();
-                    checker = ExecChecker.ruby();
-                } else if (key.equals("MSF_DIR")) {
-                    oldPath = System.getMsfPath();
-                    checker = ExecChecker.msf();
-                }
-
-                if (!folder.exists())
+                java.io.File folder = new java.io.File(path);
+                if (!folder.exists()) {
                     ToastHelper.show(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_exists), Toast.LENGTH_SHORT);
-
-                else if (!folder.canWrite())
+                } else if (!folder.canWrite()) {
                     ToastHelper.show(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_writable), Toast.LENGTH_SHORT);
-
-                else if (checker != null && !checker.canExecuteInDir(path))
-                    ToastHelper.show(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_executable), Toast.LENGTH_LONG);
-
-                else {
-                    //noinspection ConstantConditions
+                } else {
                     getPreferenceManager().getSharedPreferences().edit().putString(key, path).apply();
-                    if (oldPath != null && !oldPath.equals(path)) {
-                        File current = new File(oldPath);
-
-                        if (current.exists() && current.isDirectory() && current.listFiles().length > 2) {
-                            wipe_prompt_older(current);
-                        }
-                    }
                 }
             }
         }
@@ -305,7 +187,6 @@ public class SettingsFragment extends Fragment {
 
             if (key.equals("PREF_SNIFFER_SAMPLE_TIME")) {
                 double sampleTime;
-
                 try {
                     sampleTime = Double.parseDouble(mSnifferSampleTime.getText());
                     if (sampleTime < 0.4 || sampleTime > 1.0) {
@@ -316,14 +197,13 @@ public class SettingsFragment extends Fragment {
                     message = getString(R.string.pref_err_invalid_number);
                     sampleTime = 1.0;
                 }
-
                 mSnifferSampleTime.setText(Double.toString(sampleTime));
             } else if (key.endsWith("_PORT")) {
+                EditTextPreference prefPort = (EditTextPreference) getPreferenceScreen().findPreference(key);
                 int port;
-
                 try {
-                    port = Integer.parseInt(mProxyPort.getText());
-                    if (port < 1024 || port > 65536) {
+                    port = Integer.parseInt(prefPort != null ? prefPort.getText() : "0");
+                    if (port < 1024 || port > 65535) {
                         message = getString(R.string.pref_err_port_range);
                         port = 0;
                     } else if (!System.isPortAvailable(port)) {
@@ -346,16 +226,11 @@ public class SettingsFragment extends Fragment {
                 }
 
                 if (port == 0) {
-                    // reset to default value
                     port = getDefaultPortForKey(key);
-
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putString(key, Integer.toString(port));
-                    editor.apply();
+                    sharedPreferences.edit().putString(key, Integer.toString(port)).apply();
                 }
             } else if (key.equals("PREF_HTTP_MAX_BUFFER_SIZE")) {
                 int maxBufferSize;
-
                 try {
                     maxBufferSize = Integer.parseInt(mHttpBufferSize.getText());
                     if (maxBufferSize < 1024 || maxBufferSize > 104857600) {
@@ -366,11 +241,9 @@ public class SettingsFragment extends Fragment {
                     message = getString(R.string.pref_err_invalid_number);
                     maxBufferSize = 10485760;
                 }
-
                 mHttpBufferSize.setText(Integer.toString(maxBufferSize));
             } else if (key.equals("PREF_PASSWORD_FILENAME")) {
                 String passFileName;
-
                 try {
                     passFileName = mPasswordFilename.getText();
                     if (!passFileName.matches("[^/?*:;{}\\]+]")) {
@@ -381,17 +254,20 @@ public class SettingsFragment extends Fragment {
                     message = getString(R.string.invalid_filename);
                     passFileName = "csploit-password-sniff.log";
                 }
-
                 mPasswordFilename.setText(passFileName);
-            } else if (key.equals("MSF_ENABLED")) {
-                if (mMsfEnabled.isChecked())
-                    onMsfEnabled();
+            } else if (key.equals("MSF_RPC_BIND")) {
+                String b = sharedPreferences.getString("MSF_RPC_BIND", "127.0.0.1");
+                if (b == null || !b.trim().matches("^[0-9a-fA-F.:]+$")) {
+                    message = getString(R.string.pref_msf_rpc_bind_invalid);
+                    sharedPreferences.edit().putString("MSF_RPC_BIND", "127.0.0.1").apply();
+                }
             } else if (key.equals("PREF_AUTO_PORTSCAN")) {
                 Services.getNetworkRadar().onAutoScanChanged();
             }
 
-            if (message != null)
+            if (message != null) {
                 ToastHelper.show(getActivity(), message, Toast.LENGTH_SHORT);
+            }
 
             System.onSettingChanged(key);
         }
@@ -411,181 +287,13 @@ public class SettingsFragment extends Fragment {
             }
         }
 
-        private void onMsfEnabled() {
-            // use mReceiver as "already did that"
-            if (mReceiver != null)
-                return;
-
-            // start measureMsfSize ASAP
-            onMsfPathChanged();
-
-            Preference.OnPreferenceClickListener directoryPickerWithDefaultPath = new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-
-                    final String currentValue;
-                    final String defaultValue;
-                    final String key = preference.getKey();
-
-                    switch (key) {
-                        case "RUBY_DIR":
-                            currentValue = System.getRubyPath();
-                            defaultValue = System.getDefaultRubyPath();
-                            break;
-                        case "MSF_DIR":
-                            currentValue = System.getMsfPath();
-                            defaultValue = System.getDefaultMsfPath();
-                            break;
-                        default:
-                            return true;
-                    }
-
-                    if (!currentValue.equals(defaultValue)) {
-                        final Preference fPref = preference;
-                        (new ChoiceDialog(
-                                getActivity(),
-                                getString(R.string.choose_an_option),
-                                new String[]{getString(R.string.restore_default_path), getString(R.string.choose_a_custom_path)},
-                                new ChoiceDialog.ChoiceDialogListener() {
-                                    @Override
-                                    public void onChoice(int choice) {
-                                        if (choice == 0) {
-                                            // create default directory if it does not exists
-                                            File f = new File(defaultValue);
-                                            if (!f.exists())
-                                                f.mkdirs();
-                                            // simulate directory picker
-                                            Intent i = new Intent();
-                                            i.putExtra(DirectoryPicker.AFFECTED_PREF, key);
-                                            i.putExtra(DirectoryPicker.CHOSEN_DIRECTORY, defaultValue);
-                                            onActivityResult(DirectoryPicker.PICK_DIRECTORY, AppCompatActivity.RESULT_OK, i);
-                                        } else {
-                                            startDirectoryPicker(fPref);
-                                        }
-                                    }
-                                }
-                        )).show();
-                    } else {
-                        startDirectoryPicker(preference);
-                    }
-                    return true;
-                }
-            };
-
-            mRubyDir.setDefaultValue(System.getDefaultRubyPath());
-            mRubyDir.setOnPreferenceClickListener(directoryPickerWithDefaultPath);
-
-            mMsfDir.setDefaultValue(System.getDefaultMsfPath());
-            mMsfDir.setOnPreferenceClickListener(directoryPickerWithDefaultPath);
-
-            mWipeMSF.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    wipe_prompt();
-                    return true;
-                }
-            });
-
-            getMsfBranches();
-
-            mReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    if (intent.getAction().equals(SETTINGS_WIPE_DONE)) {
-                        onMsfPathChanged();
-                    } else if (intent.getAction().equals(SETTINGS_MSF_BRANCHES_AVAILABLE)) {
-                        onMsfBranchesAvailable();
-                    }
-                }
-            };
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(SETTINGS_WIPE_DONE);
-            filter.addAction(SETTINGS_MSF_BRANCHES_AVAILABLE);
-            ContextReceiverCompat.registerNotExported(getActivity(), mReceiver, filter);
-        }
-
-        private void getMsfBranches() {
-            if (mBranchesWaiter != null) { // run it once per settings activity
-                if (mBranchesWaiter.getState() == Thread.State.TERMINATED)
-                    try {
-                        mBranchesWaiter.join();
-                    } catch (InterruptedException e) {
-                        Logger.error(e.getMessage());
-                    }
-                return;
-            }
-
-            mMsfBranch.setEnabled(false);
-            mBranchesWaiter = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        GitHubParser.getMsfRepo().getBranches();
-                        getActivity().sendBroadcast(new Intent(SETTINGS_MSF_BRANCHES_AVAILABLE));
-                    } catch (JSONException e) {
-                        System.errorLogging(e);
-                    } catch (IOException e) {
-                        Logger.error(e.getMessage());
-                    }
-                }
-            });
-            mBranchesWaiter.start();
-        }
-
-        private void onMsfPathChanged() {
-            measureMsfSize();
-            boolean haveMsf = false;
-            File dir;
-            File[] content;
-
-            if ((dir = new File(System.getRubyPath())).isDirectory() ||
-                    (dir = new File(System.getMsfPath())).isDirectory()) {
-                content = dir.listFiles();
-                haveMsf = content != null && content.length > 2;
-            }
-
-            mWipeMSF.setEnabled(haveMsf);
-        }
-
-        private void onMsfBranchesAvailable() {
-            String[] branches;
-            boolean hasRelease = false;
-
-            try {
-                branches = GitHubParser.getMsfRepo().getBranches();
-                mMsfBranch.setEntryValues(branches);
-                mMsfBranch.setEntries(branches);
-                for (int i = 0; !hasRelease && i < branches.length; i++) {
-                    hasRelease = branches[i].equals("release");
-                }
-                mMsfBranch.setDefaultValue((hasRelease ? "release" : "master"));
-                mMsfBranch.setEnabled(true);
-            } catch (JSONException e) {
-                System.errorLogging(e);
-            } catch (IOException e) {
-                Logger.error(e.getMessage());
-            }
-        }
-
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
-            switch (item.getItemId()) {
-                case android.R.id.home:
-                    getActivity().onBackPressed();
-                    return true;
-
-                default:
-                    return super.onOptionsItemSelected(item);
+            if (item.getItemId() == android.R.id.home) {
+                getActivity().onBackPressed();
+                return true;
             }
-        }
-
-        @Override
-        public void onDestroy() {
-            if (mReceiver != null) {
-                getActivity().unregisterReceiver(mReceiver);
-                mReceiver = null;
-            }
-            super.onDestroy();
+            return super.onOptionsItemSelected(item);
         }
     }
 

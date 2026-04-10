@@ -19,6 +19,7 @@
 package org.csploit.android.gui.dialogs;
 
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.text.InputType;
 import android.widget.EditText;
 
@@ -48,6 +49,11 @@ public class InputDialog extends AlertDialog{
 
     mEditText.setEnabled(editable);
     mEditText.setMaxHeight(250);
+    /* Light alert dialog: keep field and typed text clearly visible (not theme white-on-white). */
+    mEditText.setTextColor(0xDE000000);
+    mEditText.setHintTextColor(0x99000000);
+    mEditText.setHighlightColor(Color.argb(64, 0x3F, 0x9F, 0xE0));
+    mEditText.setBackgroundResource(R.drawable.edit_text_dialog_border);
 
     if(password)
       mEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -128,6 +129,8 @@ public final class NethunterChildRunner {
         return "exec ettercap " + cmd;
       case "msfrpcd":
         return "exec msfrpcd " + cmd;
+      case "msfconsole":
+        return "exec msfconsole " + cmd;
       case "network-radar":
         return "exec bash -lc 'while true; do arp-scan -I " + shellQuote(cmd.trim()) + " --localnet 2>/dev/null || true; sleep 4; done'";
       case "fusemounts":
@@ -146,7 +149,11 @@ public final class NethunterChildRunner {
 
   private static final Pattern GREP_PORTS = Pattern.compile("Ports:\\s+(.+)$");
   private static final Pattern GREP_PORT_ENTRY = Pattern.compile("(\\d+)/([^/]+)/([^/]+)//([^/]*)//([^/]*)");
-  private static final Pattern HOP_LINE = Pattern.compile("^\\s*(\\d+)\\s+([0-9.]+)\\s");
+  /** e.g. {@code 1   0.28 ms 192.168.1.1} or {@code 2   ?? ms host (192.168.1.2)} */
+  private static final Pattern HOP_WITH_MS = Pattern.compile("^\\s*(\\d+)\\s+([^\\s]+)\\s+ms\\s+(.+)$");
+  /** e.g. {@code 3   -- 10.0.0.1} when RTT is unavailable */
+  private static final Pattern HOP_NO_RTT = Pattern.compile("^\\s*(\\d+)\\s+--\\s+(.+)$");
+  private static final Pattern IPV4_IN_TAIL = Pattern.compile("([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})");
   private static final Pattern HYDRA_LOGIN = Pattern.compile("\\[(\\d+)\\]\\[([^]]+)]\\s+host:\\s+([^\\s]+)\\s+login:\\s+(\\S+)\\s+password:\\s+(\\S+)");
   private static final Pattern ARP_LINE = Pattern.compile("^([0-9.]+)\\s+([0-9a-fA-F:]{17})\\s*(.*)$");
 
@@ -170,7 +177,10 @@ public final class NethunterChildRunner {
           ChildManager.onEvent(childId, new Newline(line));
         }
         if ("msfrpcd".equals(handler) && !readySent) {
-          if (line.contains("MSF") || line.contains("RPC") || line.contains("Bind") || line.contains("listening")) {
+          String low = line.toLowerCase();
+          if (line.contains("MSF") || line.contains("RPC") || line.contains("Bind") || line.contains("listening")
+              || low.contains("msgrpc") || low.contains("msgpack")
+              || (low.contains("started") && (low.contains("rpc") || low.contains("daemon") || low.contains("service")))) {
             readySent = true;
             ChildManager.onEvent(childId, new Ready());
           }
@@ -222,13 +232,36 @@ public final class NethunterChildRunner {
 
   private static boolean dispatchNmapLine(int childId, String cmd, String line) {
     if (cmd != null && cmd.contains("--traceroute")) {
-      Matcher hop = HOP_LINE.matcher(line);
+      String t = line;
+      if (t.startsWith("|")) {
+        t = t.replaceFirst("^\\|\\s*", "");
+      }
+      Matcher hop = HOP_WITH_MS.matcher(t);
       if (hop.find()) {
         try {
           int hopNum = Integer.parseInt(hop.group(1));
-          InetAddress node = InetAddress.getByName(hop.group(2));
-          ChildManager.onEvent(childId, new Hop(hopNum, 0L, node, ""));
-          return true;
+          long usec = parseTracerouteRttToUsec(hop.group(2));
+          String tail = hop.group(3).trim();
+          InetAddress node = extractIpv4FromTracerouteTail(tail);
+          if (node != null) {
+            String hostName = tracerouteHostnameTail(tail, node);
+            ChildManager.onEvent(childId, new Hop(hopNum, usec, node, hostName != null ? hostName : ""));
+            return true;
+          }
+        } catch (Exception ignored) {
+        }
+      }
+      Matcher hopDash = HOP_NO_RTT.matcher(t);
+      if (hopDash.find()) {
+        try {
+          int hopNum = Integer.parseInt(hopDash.group(1));
+          String tail = hopDash.group(2).trim();
+          InetAddress node = extractIpv4FromTracerouteTail(tail);
+          if (node != null) {
+            String hostName = tracerouteHostnameTail(tail, node);
+            ChildManager.onEvent(childId, new Hop(hopNum, 0L, node, hostName != null ? hostName : ""));
+            return true;
+          }
         } catch (Exception ignored) {
         }
       }
@@ -260,27 +293,124 @@ public final class NethunterChildRunner {
       XmlPullParser p = f.newPullParser();
       p.setInput(new StringReader(xml));
       int ev;
+      String portProto = null;
+      int portNum = -1;
+      String serviceName = null;
+      String product = null;
+      String version = null;
+      String osMatchName = null;
+      short osAccuracy = 100;
+      String osClassType = null;
+      boolean inOs = false;
+      boolean portOpen = false;
       while ((ev = p.next()) != XmlPullParser.END_DOCUMENT) {
         if (ev == XmlPullParser.START_TAG) {
           String name = p.getName();
           if ("port".equals(name)) {
-            String proto = p.getAttributeValue(null, "protocol");
+            portProto = p.getAttributeValue(null, "protocol");
             String portid = p.getAttributeValue(null, "portid");
-            if (proto != null && portid != null) {
-              int pn = Integer.parseInt(portid);
-              ChildManager.onEvent(childId, new Port(proto, pn));
+            portNum = portid != null ? Integer.parseInt(portid) : -1;
+            serviceName = null;
+            product = null;
+            version = null;
+            portOpen = false;
+          } else if ("state".equals(name) && portNum >= 0) {
+            String st = p.getAttributeValue(null, "state");
+            if (st != null && "open".equalsIgnoreCase(st.trim())) {
+              portOpen = true;
             }
-          } else if ("osmatch".equals(name)) {
-            String oname = p.getAttributeValue(null, "name");
-            if (oname != null) {
-              ChildManager.onEvent(childId, new Os((short) 100, oname, "generic"));
+          } else if ("service".equals(name) && portNum >= 0) {
+            serviceName = p.getAttributeValue(null, "name");
+            product = p.getAttributeValue(null, "product");
+            version = p.getAttributeValue(null, "version");
+          } else if ("os".equals(name)) {
+            inOs = true;
+            osMatchName = null;
+            osAccuracy = 100;
+            osClassType = null;
+          } else if (inOs && "osmatch".equals(name)) {
+            osMatchName = p.getAttributeValue(null, "name");
+            String acc = p.getAttributeValue(null, "accuracy");
+            if (acc != null) {
+              try {
+                osAccuracy = (short) Math.min(Short.MAX_VALUE, Integer.parseInt(acc));
+              } catch (NumberFormatException ignored) {
+              }
             }
+          } else if (inOs && "osclass".equals(name)) {
+            if (osClassType == null) {
+              osClassType = p.getAttributeValue(null, "type");
+            }
+          }
+        } else if (ev == XmlPullParser.END_TAG) {
+          String name = p.getName();
+          if ("port".equals(name) && portNum >= 0 && portProto != null) {
+            if (portOpen) {
+              emitPortFromXml(childId, portProto, portNum, serviceName, product, version);
+            }
+            portNum = -1;
+            portProto = null;
+          } else if ("os".equals(name) && osMatchName != null) {
+            String devType = osClassType != null ? osClassType : "generic";
+            ChildManager.onEvent(childId, new Os(osAccuracy, osMatchName, devType));
+            inOs = false;
           }
         }
       }
     } catch (Exception e) {
       Logger.debug("nmap xml: " + e.getMessage());
     }
+  }
+
+  private static void emitPortFromXml(int childId, String portProto, int portNum,
+                                      String serviceName, String product, String version) {
+    String svc = serviceName;
+    if (svc == null || svc.isEmpty()) {
+      svc = product;
+    }
+    String ver = version;
+    if (product != null && !product.isEmpty()) {
+      if (ver != null && !ver.isEmpty()) {
+        ver = product + " " + ver;
+      } else {
+        ver = product;
+      }
+    }
+    if (svc == null || svc.isEmpty()) {
+      ChildManager.onEvent(childId, new Port(portProto, portNum));
+    } else {
+      ChildManager.onEvent(childId, new Port(portProto, portNum, svc, ver));
+    }
+  }
+
+  private static long parseTracerouteRttToUsec(String token) {
+    if (token == null || token.indexOf('?') >= 0) {
+      return 0L;
+    }
+    try {
+      float ms = Float.parseFloat(token.trim());
+      return Math.max(0L, (long) (ms * 1000f));
+    } catch (NumberFormatException e) {
+      return 0L;
+    }
+  }
+
+  private static InetAddress extractIpv4FromTracerouteTail(String tail) throws UnknownHostException {
+    Matcher m = IPV4_IN_TAIL.matcher(tail);
+    if (m.find()) {
+      return InetAddress.getByName(m.group(1));
+    }
+    return null;
+  }
+
+  private static String tracerouteHostnameTail(String tail, InetAddress node) {
+    String ip = node.getHostAddress();
+    int idx = tail.indexOf('(' + ip);
+    if (idx > 0) {
+      return tail.substring(0, idx).trim();
+    }
+    String noIp = tail.replace(ip, "").trim();
+    return noIp.isEmpty() ? "" : noIp;
   }
 
   private static boolean dispatchHydraLine(int childId, String line) {

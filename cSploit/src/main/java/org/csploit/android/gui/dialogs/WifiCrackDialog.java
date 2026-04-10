@@ -19,6 +19,7 @@
 package org.csploit.android.gui.dialogs;
 
 import android.content.DialogInterface;
+import android.graphics.Color;
 import androidx.fragment.app.FragmentActivity;
 import androidx.appcompat.app.AlertDialog;
 import android.text.InputType;
@@ -35,6 +36,10 @@ public class WifiCrackDialog extends AlertDialog{
     mEditText = new EditText(activity);
     mEditText.setEnabled(true);
     mEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+    mEditText.setTextColor(0xDE000000);
+    mEditText.setHintTextColor(0x99000000);
+    mEditText.setHighlightColor(Color.argb(64, 0x3F, 0x9F, 0xE0));
+    mEditText.setBackgroundResource(R.drawable.edit_text_dialog_border);
 
     this.setTitle(title);
     this.setMessage(message);

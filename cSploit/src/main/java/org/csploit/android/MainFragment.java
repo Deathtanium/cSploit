@@ -71,6 +71,7 @@ import org.csploit.android.helpers.ThreadHelper;
 import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.net.Network;
 import org.csploit.android.net.Target;
+import org.csploit.android.net.metasploit.RPCClient;
 import org.csploit.android.plugins.ExploitFinder;
 import org.csploit.android.plugins.Inspector;
 import org.csploit.android.plugins.LoginCracker;
@@ -80,8 +81,8 @@ import org.csploit.android.plugins.RouterPwn;
 import org.csploit.android.plugins.Sessions;
 import org.csploit.android.plugins.Traceroute;
 import org.csploit.android.plugins.mitm.MITM;
+import org.csploit.android.services.MsfRpcdService;
 import org.csploit.android.services.Services;
-import org.csploit.android.services.UpdateChecker;
 import org.csploit.android.services.UpdateService;
 import org.csploit.android.services.receivers.MsfRpcdServiceReceiver;
 import org.csploit.android.services.receivers.NetworkRadarReceiver;
@@ -110,7 +111,6 @@ public class MainFragment extends Fragment {
     private TargetAdapter mTargetAdapter = null;
     private NetworkRadarReceiver mRadarReceiver = new NetworkRadarReceiver();
     private UpdateReceiver mUpdateReceiver = new UpdateReceiver();
-    private WipeReceiver mWipeReceiver = new WipeReceiver();
     private MsfRpcdServiceReceiver mMsfReceiver = new MsfRpcdServiceReceiver();
     private ConnectivityReceiver mConnectivityReceiver = new ConnectivityReceiver();
     private Menu mMenu = null;
@@ -231,7 +231,6 @@ public class MainFragment extends Fragment {
 
         mRadarReceiver.register(getActivity());
         mUpdateReceiver.register(getActivity());
-        mWipeReceiver.register(getActivity());
         mMsfReceiver.register(getActivity());
         mConnectivityReceiver.register(getActivity());
 
@@ -241,7 +240,7 @@ public class MainFragment extends Fragment {
 
     private void startAllServices() {
         startNetworkRadar();
-        startUpdateChecker();
+        broadcastNoInAppUpdates();
         startRPCServer();
     }
 
@@ -593,16 +592,14 @@ public class MainFragment extends Fragment {
         }
     };
 
-    public void startUpdateChecker() {
-        if (!isConnectivityAvailable() || mIsUpdateDownloading)
-            return;
-        if (System.getSettings().getBoolean("PREF_CHECK_UPDATES", true)) {
-            new UpdateChecker(getActivity()).start();
-            mIsUpdateDownloading = true;
-        } else {
+    /**
+     * Legacy in-app Ruby/MSF tarball updates are not used with the NetHunter chroot; keep the UI path that expects a final "no updates" broadcast.
+     */
+    public void broadcastNoInAppUpdates() {
+        if (getActivity() != null) {
             getActivity().sendBroadcast(new Intent(UPDATE_NOT_AVAILABLE));
-            mIsUpdateDownloading = false;
         }
+        mIsUpdateDownloading = false;
     }
 
     public void startNetworkRadar() {
@@ -807,6 +804,50 @@ public class MainFragment extends Fragment {
                 }).start();
                 return true;
 
+            case R.id.test_msf_rpc:
+                ThreadHelper.getSharedExecutor().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        final android.content.Context app = getActivity().getApplicationContext();
+                        SharedPreferences p = System.getSettings();
+                        String user = p.getString("MSF_RPC_USER", "msf");
+                        String password = p.getString("MSF_RPC_PSWD", "msf");
+                        int port = System.MSF_RPC_PORT;
+                        boolean ssl = p.getBoolean("MSF_RPC_SSL", false);
+                        String transport = app.getString(ssl ? R.string.msf_rpc_transport_tls : R.string.msf_rpc_transport_plain);
+                        /* Menu test always hits loopback from the app; start/connect may still try LAN fallback on NetHunter. */
+                        final String testHost = "127.0.0.1";
+                        String detail = app.getString(R.string.msf_rpc_status_detail, testHost, port, transport);
+                        String configuredHost = p.getString("MSF_RPC_HOST", "127.0.0.1");
+                        String resultMsg;
+                        try {
+                            RPCClient test = new RPCClient(testHost, user, password, port, ssl);
+                            if (test.isConnected()) {
+                                resultMsg = getString(R.string.msf_test_ok) + "\n" + detail;
+                                if (!testHost.equals(configuredHost.trim())) {
+                                    resultMsg += "\n" + getString(R.string.msf_test_uses_loopback_note, configuredHost);
+                                }
+                            } else {
+                                resultMsg = getString(R.string.msf_test_fail) + "\n" + detail + "\n"
+                                        + getString(R.string.msf_test_not_connected_after_login);
+                                Logger.warning("MSF RPC test: core.version failed (after successful auth) at " + detail);
+                            }
+                        } catch (Exception e) {
+                            Logger.warning("MSF RPC test failed: " + detail + " — " + e.getClass().getName() + ": " + e.getMessage());
+                            resultMsg = getString(R.string.msf_test_fail) + "\n" + detail + "\n" + e.getMessage()
+                                    + "\n" + MsfRpcdService.diagnosisForRpcFailure(app, e);
+                        }
+                        final String msg = resultMsg;
+                        getActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ToastHelper.show(getActivity(), msg, Toast.LENGTH_LONG);
+                            }
+                        });
+                    }
+                });
+                return true;
+
             case R.id.submit_issue:
                 String uri = getString(R.string.github_new_issue_url);
                 Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
@@ -858,7 +899,6 @@ public class MainFragment extends Fragment {
 
         mRadarReceiver.unregister();
         mUpdateReceiver.unregister();
-        mWipeReceiver.unregister();
         mMsfReceiver.unregister();
         mConnectivityReceiver.unregister();
 
@@ -1048,55 +1088,6 @@ public class MainFragment extends Fragment {
         }
     }
 
-    private class WipeReceiver extends ManagedReceiver {
-        private IntentFilter mFilter = null;
-
-        public WipeReceiver() {
-            mFilter = new IntentFilter();
-
-            mFilter.addAction(SettingsFragment.SETTINGS_WIPE_START);
-        }
-
-        public IntentFilter getFilter() {
-            return mFilter;
-        }
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            if (intent.getAction().equals(SettingsFragment.SETTINGS_WIPE_START)) {
-                try {
-                    String path;
-
-                    if (intent.hasExtra(SettingsFragment.SETTINGS_WIPE_DIR)) {
-                        path = intent.getStringExtra(SettingsFragment.SETTINGS_WIPE_DIR);
-                    } else {
-                        path = System.getRubyPath() + "' '" + System.getMsfPath();
-                    }
-
-                    StopRPCServer();
-                    System.getTools().raw.async("rm -rf '" + path + "'", new Child.EventReceiver() {
-                        @Override
-                        public void onEnd(int exitCode) {
-                            getActivity().sendBroadcast(new Intent(SettingsFragment.SETTINGS_WIPE_DONE));
-                        }
-
-                        @Override
-                        public void onDeath(int signal) {
-                            getActivity().sendBroadcast(new Intent(SettingsFragment.SETTINGS_WIPE_DONE));
-                        }
-
-                        @Override
-                        public void onEvent(Event e) {
-                        }
-                    });
-                } catch (Exception e) {
-                    System.errorLogging(e);
-                }
-            }
-        }
-    }
-
     private class UpdateReceiver extends ManagedReceiver {
         private IntentFilter mFilter = null;
 
@@ -1161,7 +1152,7 @@ public class MainFragment extends Fragment {
             }
 
             // restart update checker after a successful update
-            startUpdateChecker();
+            broadcastNoInAppUpdates();
         }
 
         private void onUpdateError(final Update update, final int message) {

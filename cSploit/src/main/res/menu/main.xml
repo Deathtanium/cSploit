@@ -47,6 +47,9 @@
             android:id="@+id/ss_msfrpcd"
             android:title="@string/menu_stop_msfrpcd" />
         <item
+            android:id="@+id/test_msf_rpc"
+            android:title="@string/menu_test_msf_rpc" />
+        <item
             android:id="@+id/submit_issue"
             android:title="@string/menu_submit_issue" />
         <item

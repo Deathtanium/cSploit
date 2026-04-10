@@ -1,6 +1,7 @@
 package org.csploit.android.helpers;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -83,6 +84,10 @@ public final class MainLayoutHelper {
     });
     ViewCompat.requestApplyInsets(mainRoot);
     Toolbar toolbar = activity.findViewById(R.id.toolbar);
+    SharedPreferences themePrefs = activity.getSharedPreferences("THEME", 0);
+    toolbar.setPopupTheme(themePrefs.getBoolean("isDark", false)
+        ? R.style.ThemeOverlay_CSploit_Dark_PopupMenu
+        : R.style.ThemeOverlay_AppCompat_Light);
     activity.setSupportActionBar(toolbar);
   }
 }

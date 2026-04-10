@@ -231,9 +231,10 @@ public class RPCClient
 
   public boolean isConnected() {
     try {
-      exec("core.version", new Object[]{});
+      /* Must send the session token like every other authenticated RPC (exec(..., {}) omits it). */
+      call("core.version");
       return true;
-    } catch (MSFException | MsgpackException | IOException e) {
+    } catch (MSFException | IOException e) {
       return false;
     }
   }
