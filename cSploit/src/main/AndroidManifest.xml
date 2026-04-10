@@ -20,6 +20,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
+    <queries>
+        <package android:name="com.offsec.nethunter" />
+    </queries>
 
     <application
         android:name=".CSploitApplication"

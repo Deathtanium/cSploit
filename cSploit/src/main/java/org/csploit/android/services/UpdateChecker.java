@@ -101,6 +101,9 @@ public class UpdateChecker extends Thread
   }
 
   private Update getCoreUpdate() {
+    if (System.isNethunterToolBridge()) {
+      return null;
+    }
     String localVersion = System.getCoreVersion();
     String platform = System.getPlatform();
     String remoteVersion, remoteURL;

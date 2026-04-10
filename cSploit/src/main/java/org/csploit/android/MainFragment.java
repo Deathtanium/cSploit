@@ -287,11 +287,17 @@ public class MainFragment extends Fragment {
                 System.initCore();
                 mIsDaemonBeating = true;
 
-                if (Client.hadCrashed()) {
-                    Logger.warning("Client has previously crashed, building a crash report.");
-                    CrashReporter.notifyNativeLibraryCrash();
-                    onInitializationError(getString(R.string.JNI_crash_detected));
-                    return;
+                if (!System.isNethunterToolBridge()) {
+                    try {
+                        if (Client.hadCrashed()) {
+                            Logger.warning("Client has previously crashed, building a crash report.");
+                            CrashReporter.notifyNativeLibraryCrash();
+                            onInitializationError(getString(R.string.JNI_crash_detected));
+                            return;
+                        }
+                    } catch (Throwable t) {
+                        Logger.debug("JNI hadCrashed: " + t.getMessage());
+                    }
                 }
             } catch (UnsatisfiedLinkError e) {
                 onInitializationError("hi developer, you missed to build JNI stuff, thanks for playing with me :)");

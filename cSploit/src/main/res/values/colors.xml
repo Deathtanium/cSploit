@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Toolbar / system bars (dark theme matches Hijacker) -->
+    <color name="colorPrimary">#212121</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#33B5E5</color>
     <color name="background_window">#FFE5E5E5</color>
-    <color name="background_window_dark">#ff505050</color>
+    <color name="background_window_dark">#121212</color>
     <color name="app_color">#FF3F9FE0</color>
     <color name="app_color_dark">#ff3786bd</color>
     <color name="gray_text">#FF888888</color>

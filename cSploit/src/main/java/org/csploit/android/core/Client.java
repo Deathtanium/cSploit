@@ -1,13 +1,17 @@
 package org.csploit.android.core;
 
 /**
- * the cSploitd client
+ * the cSploitd client (JNI). Not used when {@link System#isNethunterToolBridge()} is active.
  */
 public class Client {
 
   static {
-    java.lang.System.loadLibrary("cSploitCommon");
-    java.lang.System.loadLibrary("cSploitClient");
+    try {
+      java.lang.System.loadLibrary("cSploitCommon");
+      java.lang.System.loadLibrary("cSploitClient");
+    } catch (UnsatisfiedLinkError e) {
+      org.csploit.android.core.Logger.error("cSploit JNI libraries not loaded: " + e.getMessage());
+    }
   }
 
   native static boolean Login(String username, String pswdHash);

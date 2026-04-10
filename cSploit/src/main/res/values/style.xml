@@ -15,19 +15,19 @@
         <item name="android:animation">@style/AppAnimation</item>
     </style>
 
-    <!-- this dark theme needs a lot of help and support in the app overall -->
+    <!-- Dark theme aligned with Hijacker (grey toolbar, indigo status bar / accents) -->
 
     <style name="DarkTheme" parent="Theme.MaterialComponents">
         <item name="actionBarStyle">@style/Theme.CSploitActionBarDarkStyle</item>
-        <item name="actionModeBackground">@color/app_color_dark</item>
-        <item name="colorPrimary">@color/selectable_blue_dark</item>
-        <!-- darker variant of colorPrimary (for status bar, contextual app bars) -->
-        <item name="colorPrimaryDark">@color/selectable_blue_dark</item>
-        <!-- theme UI controls like checkboxes and text fields -->
-        <item name="colorAccent">@color/selectable_blue_dark</item>
-        <item name="colorControlHighlight">@color/selectable_blue_dark</item>
+        <item name="actionModeBackground">@color/colorPrimary</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorControlHighlight">@color/colorAccent</item>
         <item name="android:windowBackground">@color/background_window_dark</item>
-        <item name="android:colorBackground">#ff21272b</item>
+        <item name="android:colorBackground">@color/background_window_dark</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:navigationBarColor">@color/colorPrimary</item>
         <item name="android:animation">@style/AppAnimation</item>
     </style>
 

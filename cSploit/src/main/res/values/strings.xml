@@ -423,6 +423,21 @@
     <string name="pref_auto_portscan">Auto port-scan</string>
     <string name="pref_auto_portscan_desc">Always SYN scan for open ports when new host is discovered</string>
 
+    <string name="pref_nethunter_title">Tool backend</string>
+    <string name="pref_nethunter_desc">Run tools from the NetHunter Kali chroot (no GitHub core download) or use the legacy cSploit core with JNI</string>
+    <string name="pref_chroot_dir_title">Kali chroot directory</string>
+    <string name="pref_chroot_dir_desc">Path to the Kali rootfs (NetHunter default: /data/local/nhsystem/kali-arm64)</string>
+    <string-array name="pref_nethunter_backend_labels">
+        <item>Automatic</item>
+        <item>NetHunter chroot</item>
+        <item>Legacy core (JNI)</item>
+    </string-array>
+    <string-array name="pref_nethunter_backend_values" translatable="false">
+        <item>auto</item>
+        <item>nethunter</item>
+        <item>legacy</item>
+    </string-array>
+
     <string name="exploit_finder">Exploit finder</string>
     <string name="exploit_finder_desc">Search for exploit that matches found vulnerabilities.</string>
     <string name="exploit_launch_all">Launch all</string>

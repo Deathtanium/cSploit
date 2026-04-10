@@ -27,6 +27,10 @@ public class ChildManager {
 
   private static Executor eventExecutor = Executors.newCachedThreadPool();
 
+  public static void storeHandlersFromNethunter() {
+    handlers = NetHunterRuntime.nethunterHandlerList();
+  }
+
   /**
    * wait for a child termination
    * @param c  the child to wait for
@@ -79,11 +83,30 @@ public class ChildManager {
    * @throws ChildNotStartedException when cannot start a child.
    */
   public static Child async(String handler, String cmd, String[] env, EventReceiver receiver) throws ChildNotStartedException {
-    Child c;
+    Child c = new Child();
 
-    c = new Child();
+    if (System.isNethunterToolBridge()) {
+      c.id = NethunterChildRunner.allocateChildId();
+      c.running = true;
+      c.receiver = receiver;
+      synchronized (children) {
+        children.add(c);
+        children.notifyAll();
+      }
+      if (c.receiver != null) {
+        c.receiver.onStart(cmd);
+      }
+      NethunterChildRunner.spawn(c.id, handler, cmd, env, receiver);
+      Logger.debug(String.format("{ handler='%s', cmd='%s' } => nh %d", handler, cmd, c.id));
+      return c;
+    }
 
-    c.id = Client.StartCommand(handler, cmd, env);
+    try {
+      c.id = Client.StartCommand(handler, cmd, env);
+    } catch (UnsatisfiedLinkError e) {
+      Logger.error("JNI StartCommand: " + e.getMessage());
+      c.id = -1;
+    }
     if (c.id == -1) {
       Logger.debug(String.format("{ handler='%s', cmd='%s' } => FAILED", handler, cmd));
       throw new ChildNotStartedException();

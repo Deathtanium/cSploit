@@ -62,8 +62,15 @@ public class Child {
    * @param data the bytes to send
    */
   public synchronized void send(byte[] data) throws IOException {
-    if(!Client.SendTo(this.id, data))
-      throw new IOException("cannot send bytes to child");
+    if (NethunterChildRunner.isNethunterChildId(this.id)) {
+      throw new IOException("cannot send bytes to NetHunter child process");
+    }
+    try {
+      if(!Client.SendTo(this.id, data))
+        throw new IOException("cannot send bytes to child");
+    } catch (UnsatisfiedLinkError e) {
+      throw new IOException("JNI send unavailable", e);
+    }
   }
 
   /**
@@ -79,14 +86,21 @@ public class Child {
    * @param signal the signal to send
    */
   public void kill(int signal) {
-    Client.Kill(this.id, signal);
+    if (NethunterChildRunner.tryKill(this.id, signal)) {
+      return;
+    }
+    try {
+      Client.Kill(this.id, signal);
+    } catch (UnsatisfiedLinkError e) {
+      org.csploit.android.core.Logger.error("JNI Kill unavailable: " + e.getMessage());
+    }
   }
 
   /**
    * kill this child by sending a SIGKILL
    */
   public void kill() {
-    Client.Kill(this.id, 9);
+    kill(9);
   }
 
   /**

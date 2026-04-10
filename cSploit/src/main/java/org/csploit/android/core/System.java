@@ -144,6 +144,9 @@ public class System {
 
   private static boolean mCoreInitialized = false;
 
+  /** When true, tools run via {@link NethunterChildRunner} instead of cSploitd/JNI. */
+  private static volatile boolean mNethunterToolBridge = false;
+
   private static KnownIssues mKnownIssues = null;
 
   private static Observer targetListObserver = null;
@@ -328,17 +331,34 @@ public class System {
    * shutdown the core daemon
    */
   public static void shutdownCoreDaemon() {
-    if (!Client.isConnected() && !Client.Connect(getCorePath() + "/cSploitd.sock")) {
-      return; // daemon is not running
+    if (mNethunterToolBridge) {
+      mCoreInitialized = false;
+      mNethunterToolBridge = false;
+      Services.getNetworkRadar().onAutoScanChanged();
+      return;
     }
-    if (!Client.isAuthenticated() && !Client.Login("android", "DEADBEEF")) {
-      Logger.error("cannot login to daemon");
+    try {
+      if (!Client.isConnected() && !Client.Connect(getCorePath() + "/cSploitd.sock")) {
+        return; // daemon is not running
+      }
+      if (!Client.isAuthenticated() && !Client.Login("android", "DEADBEEF")) {
+        Logger.error("cannot login to daemon");
+      }
+      Client.Shutdown();
+      Client.Disconnect();
+    } catch (UnsatisfiedLinkError e) {
+      Logger.error("shutdownCoreDaemon: " + e.getMessage());
     }
-    Client.Shutdown();
-    Client.Disconnect();
 
     mCoreInitialized = false;
     Services.getNetworkRadar().onAutoScanChanged();
+  }
+
+  /**
+   * True when the app uses NetHunter Kali chroot for tool execution (no downloaded cSploit core tarball).
+   */
+  public static boolean isNethunterToolBridge() {
+    return mNethunterToolBridge;
   }
 
   public static void initCore() throws DaemonException, SuException {
@@ -346,22 +366,62 @@ public class System {
     if (mCoreInitialized)
       return;
 
-    String socket_path = getCorePath() + "/cSploitd.sock";
+    SharedPreferences pref = getSettings();
+    boolean nhProbe = NetHunterRuntime.probeChroot(mContext, pref);
+    boolean legacyCore = new File(getCorePath() + "/VERSION").exists();
+    String mode = NetHunterRuntime.backendMode(pref);
 
-    if (!Client.isConnected()) {
-      if (!Client.Connect(socket_path)) {
-        startCoreDaemon();
-        if (!Client.Connect(socket_path))
-          throw new DaemonException("cannot connect to core daemon");
+    boolean useNh = false;
+    if ("nethunter".equals(mode)) {
+      useNh = nhProbe;
+      if (!nhProbe) {
+        throw new DaemonException("NetHunter backend selected but Kali chroot was not found (see chroot path in settings).");
+      }
+    } else if ("legacy".equals(mode)) {
+      useNh = false;
+      if (!legacyCore) {
+        throw new DaemonException("Legacy core selected but " + getCorePath() + "/VERSION is missing.");
+      }
+    } else {
+      // auto: prefer NetHunter when the chroot exists, else legacy tarball
+      useNh = nhProbe;
+      if (!useNh && !legacyCore) {
+        throw new DaemonException("No tool backend: install NetHunter Kali chroot or extract the legacy cSploit core into the app files directory.");
       }
     }
 
-    if (!Client.isAuthenticated() && !Client.Login("android", "DEADBEEF")) {
-      throw new DaemonException("cannot login to core daemon");
+    if (useNh) {
+      NethunterChildRunner.init(mContext);
+      mNethunterToolBridge = true;
+      ChildManager.storeHandlersFromNethunter();
+      reloadTools();
+      mCoreInitialized = true;
+      Services.getNetworkRadar().onAutoScanChanged();
+      getNetwork().onCoreAttached();
+      return;
     }
 
-    if (!Client.LoadHandlers()) {
-      throw new DaemonException("cannot load handlers");
+    mNethunterToolBridge = false;
+    String socket_path = getCorePath() + "/cSploitd.sock";
+
+    try {
+      if (!Client.isConnected()) {
+        if (!Client.Connect(socket_path)) {
+          startCoreDaemon();
+          if (!Client.Connect(socket_path))
+            throw new DaemonException("cannot connect to core daemon");
+        }
+      }
+
+      if (!Client.isAuthenticated() && !Client.Login("android", "DEADBEEF")) {
+        throw new DaemonException("cannot login to core daemon");
+      }
+
+      if (!Client.LoadHandlers()) {
+        throw new DaemonException("cannot load handlers");
+      }
+    } catch (UnsatisfiedLinkError e) {
+      throw new DaemonException("JNI client not available: " + e.getMessage());
     }
 
     ChildManager.storeHandlers();
@@ -1072,7 +1132,17 @@ public class System {
   }
 
   public static boolean isCoreInstalled() {
-    return new File(getCorePath() + "/VERSION").exists();
+    SharedPreferences pref = getSettings();
+    boolean nhProbe = NetHunterRuntime.probeChroot(mContext, pref);
+    boolean legacyCore = new File(getCorePath() + "/VERSION").exists();
+    String mode = NetHunterRuntime.backendMode(pref);
+    if ("nethunter".equals(mode)) {
+      return nhProbe;
+    }
+    if ("legacy".equals(mode)) {
+      return legacyCore;
+    }
+    return nhProbe || legacyCore;
   }
 
   public static boolean isCoreInitialized() {
@@ -1304,8 +1374,13 @@ public class System {
         mTargets.clear();
       }
 
-      Client.Disconnect();
+      try {
+        Client.Disconnect();
+      } catch (UnsatisfiedLinkError e) {
+        Logger.debug("clean: JNI disconnect skipped");
+      }
       mCoreInitialized = false;
+      mNethunterToolBridge = false;
       mInitialized = false;
       Services.getNetworkRadar().onAutoScanChanged();
     } catch (Exception e) {

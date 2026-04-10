@@ -23,6 +23,7 @@ import android.text.TextUtils;
 import org.csploit.android.core.Child;
 import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.Logger;
+import org.csploit.android.core.System;
 import org.csploit.android.events.Event;
 import org.csploit.android.events.Hop;
 import org.csploit.android.events.Os;
@@ -130,7 +131,9 @@ public class NMap extends Tool {
   }
 
   public Child synScan( Target target, SynScanReceiver receiver, String custom ) throws ChildManager.ChildNotStartedException {
-    String command = "-sS -P0 --privileged --send-ip --system-dns -vvv ";
+    String command = System.isNethunterToolBridge()
+        ? "-sS -P0 --privileged --send-ip --system-dns -oG - "
+        : "-sS -P0 --privileged --send-ip --system-dns -vvv ";
 
     if( custom != null )
       command += "-p " + custom + " ";
@@ -147,7 +150,7 @@ public class NMap extends Tool {
   }
 
   public Child customScan( Target target, SynScanReceiver receiver, String custom ) throws ChildManager.ChildNotStartedException {
-    String command = "-vvv ";
+    String command = System.isNethunterToolBridge() ? "-oG - " : "-vvv ";
 
     if( custom != null )
       command += custom + " ";
