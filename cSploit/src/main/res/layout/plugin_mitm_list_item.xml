@@ -41,7 +41,7 @@
             android:layout_alignLeft="@+id/itemName"
             android:layout_below="@id/itemName"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="@color/gray_text"
+            android:textColor="?android:attr/textColorSecondary"
             android:textSize="14sp" />
 
         <ProgressBar

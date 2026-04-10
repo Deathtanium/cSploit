@@ -40,6 +40,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.csploit.android.R;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.Logger;
 import org.csploit.android.core.Plugin;
@@ -133,8 +134,8 @@ public class PortScanner extends Plugin {
     mScanFloatingActionButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_play_arrow_24dp));
 
     if (mPortList.size() == 0)
-      Toast.makeText(this, getString(R.string.no_open_ports),
-              Toast.LENGTH_LONG).show();
+      ToastHelper.show(this, getString(R.string.no_open_ports),
+              Toast.LENGTH_LONG);
   }
 
   private void setStartedState() {
@@ -152,7 +153,7 @@ public class PortScanner extends Plugin {
       mRunning = true;
     } catch (ChildManager.ChildNotStartedException e) {
       System.errorLogging(e);
-      Toast.makeText(PortScanner.this, getString(R.string.child_not_started) + "\n" + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+      ToastHelper.show(PortScanner.this, getString(R.string.child_not_started) + "\n" + e.getLocalizedMessage(), Toast.LENGTH_LONG);
     }
     mScanFloatingActionButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_stop_24dp));
   }

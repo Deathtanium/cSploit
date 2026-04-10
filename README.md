@@ -4,6 +4,15 @@
 
 This tree is an **independent fork** for a **modern Android port** (see root `AGENTS.md`). Git remote **`upstream`** points at the archived [cSploit/android](https://github.com/cSploit/android) repository; add your own `origin` when you publish a fork. Work is organized in phases (audit → Gradle/target SDK → runtime → MITM). Use only on networks you own or are explicitly authorized to test.
 
+### Overhaul summary (this fork, developer-facing)
+
+- **NetHunter / tools:** Native core tarball flow is bypassed when tools run from the **NetHunter Kali chroot** (`NetHunterRuntime`, `NethunterChildRunner`, `ChildManager`). Manifest includes a **package visibility** query for `com.offsec.nethunter`. Chroot path is configurable in settings; see `docs/NETHUNTER_PACKAGES.md` and `docs/NETHUNTER_ONEPLUS5_RUNBOOK.md`.
+- **Themes:** **Dark theme** aligned with the Hijacker-style palette (toolbar, status bar, accents). `AppTheme` / `DarkTheme` use consistent **surface / on-surface** and text attributes so lists, plugins, and settings stay readable; preference-specific text appearances for dark settings.
+- **Layout / API 35+:** **`MainLayoutHelper`** centralizes the main shell (toolbar as support action bar, no accidental edge-to-edge overlap) and **`installInsetsForActivity`** so plugin activities, console, file pickers, MITM screens, etc. get **padding from system bars + app bar (+ IME)** instead of drawing under the in-app toolbar on high `targetSdk` devices.
+- **Toasts:** **`ToastHelper`** wraps toasts with a **light overlay** where needed so messages are not white-on-white on dark activities.
+- **Notifications:** Builders avoid **forced colorized** styling that produced unreadable contrast in places.
+- **Alert dialogs:** **`Theme.CSploit.AlertDialog`** plus **`alertDialogTheme`** on app themes fixes **positive button (OK) text** inheriting the activity’s white `textColorPrimary` on a light dialog background.
+
 ---
 
 # cSploit: Android network pentesting suite

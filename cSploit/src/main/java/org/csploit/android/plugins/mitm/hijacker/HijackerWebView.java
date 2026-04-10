@@ -44,6 +44,7 @@ import android.widget.TextView;
 
 import org.csploit.android.R;
 import org.csploit.android.core.System;
+import org.csploit.android.helpers.MainLayoutHelper;
 
 import java.net.HttpCookie;
 
@@ -68,6 +69,7 @@ public class HijackerWebView extends AppCompatActivity {
     supportRequestWindowFeature(Window.FEATURE_PROGRESS);
     setTitle(System.getCurrentTarget() + " > MITM > Session Hijacker");
     setContentView(R.layout.plugin_mitm_hijacker_webview);
+    MainLayoutHelper.installInsetsForActivity(this);
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
     mWebView = (WebView) findViewById(R.id.webView);

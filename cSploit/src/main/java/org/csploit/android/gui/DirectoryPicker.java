@@ -34,6 +34,8 @@ import android.widget.Toast;
 
 import org.csploit.android.R;
 import org.csploit.android.core.System;
+import org.csploit.android.helpers.MainLayoutHelper;
+import org.csploit.android.helpers.ToastHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -75,6 +77,7 @@ public class DirectoryPicker extends ListActivity{
     }
 
     setContentView(R.layout.dirpicker_chooser_list);
+    MainLayoutHelper.installInsetsForActivity(this);
     setTitle(dir.getAbsolutePath());
     Button btnChoose = (Button) findViewById(R.id.btnChoose);
     String name = dir.getName();
@@ -93,7 +96,7 @@ public class DirectoryPicker extends ListActivity{
     if(!dir.canRead()){
       Context context = getApplicationContext();
       String msg = getString(R.string.could_not_read_folder);
-      if(context != null) Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+      if(context != null) ToastHelper.show(context, msg, Toast.LENGTH_LONG);
       return;
     }
 

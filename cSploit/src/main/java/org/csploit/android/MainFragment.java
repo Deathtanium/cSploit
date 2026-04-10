@@ -68,6 +68,7 @@ import org.csploit.android.gui.dialogs.MultipleChoiceDialog;
 import org.csploit.android.gui.dialogs.SpinnerDialog;
 import org.csploit.android.gui.dialogs.SpinnerDialog.SpinnerDialogListener;
 import org.csploit.android.helpers.ThreadHelper;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.net.Network;
 import org.csploit.android.net.Target;
 import org.csploit.android.plugins.ExploitFinder;
@@ -138,12 +139,16 @@ public class MainFragment extends Fragment {
     }
 
     private void onInitializationError(final String message) {
+        onInitializationError(message, false);
+    }
+
+    private void onInitializationError(final String message, final boolean exitApp) {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 new FatalDialog(getString(R.string.initialization_error),
                         message, message.contains(">"),
-                        getActivity()).show();
+                        getActivity(), exitApp).show();
             }
         });
     }
@@ -160,11 +165,10 @@ public class MainFragment extends Fragment {
     public void onViewCreated(View v, Bundle savedInstanceState) {
         SharedPreferences themePrefs = getActivity().getSharedPreferences("THEME", 0);
         Boolean isDark = themePrefs.getBoolean("isDark", false);
+        // Theme is applied in MainActivity before setContentView; do not call setTheme here (breaks window insets).
         if (isDark) {
-            getActivity().setTheme(R.style.DarkTheme);
             v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window_dark));
         } else {
-            getActivity().setTheme(R.style.AppTheme);
             v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window));
         }
         mEmptyTextView = (TextView) v.findViewById(R.id.emptyTextView);
@@ -195,9 +199,9 @@ public class MainFragment extends Fragment {
                     }
                 });
 
-                Toast.makeText(getActivity(),
+                ToastHelper.show(getActivity(),
                         getString(R.string.selected_) + System.getCurrentTarget(),
-                        Toast.LENGTH_SHORT).show();
+                        Toast.LENGTH_SHORT);
 
             }
         });
@@ -288,8 +292,13 @@ public class MainFragment extends Fragment {
             }
         }
 
-        // if all is initialized, configure the network
-        initSystem();
+        // if all is initialized, configure the network (wlan0 only)
+        if (!System.hasWlanInterface()) {
+            onInitializationError(getString(R.string.error_wlan0_missing), true);
+            return;
+        }
+        if (!initSystem())
+            return;
     }
 
     @Override
@@ -311,7 +320,7 @@ public class MainFragment extends Fragment {
             return;
         mMenu.findItem(R.id.add).setVisible(isAnyNetInterfaceAvailable);
         mMenu.findItem(R.id.scan).setVisible(mHaveAnyWifiInterface);
-        mMenu.findItem(R.id.wifi_ifaces).setEnabled(canChangeInterface());
+        mMenu.findItem(R.id.wifi_ifaces).setVisible(false);
         mMenu.findItem(R.id.new_session).setEnabled(isAnyNetInterfaceAvailable);
         mMenu.findItem(R.id.save_session).setEnabled(isAnyNetInterfaceAvailable);
         mMenu.findItem(R.id.restore_session).setEnabled(isAnyNetInterfaceAvailable);
@@ -333,18 +342,16 @@ public class MainFragment extends Fragment {
     }
 
     private boolean initSystem() {
-        // retry
         try {
             System.init(getActivity().getApplicationContext());
         } catch (Exception e) {
-            boolean isFatal = !(e instanceof NoRouteToHostException);
-
-            if (isFatal) {
-                System.errorLogging(e);
-                onInitializationError(System.getLastError());
-            }
-
-            return !isFatal;
+            System.errorLogging(e);
+            String msg = e instanceof NoRouteToHostException
+                    ? getString(R.string.error_wlan0_required)
+                    : (System.getLastError() == null || System.getLastError().isEmpty()
+                    ? getString(R.string.error_wlan0_required) : System.getLastError());
+            onInitializationError(msg, true);
+            return false;
         }
 
         registerPlugins();
@@ -393,7 +400,7 @@ public class MainFragment extends Fragment {
     }
 
     private boolean canChangeInterface() {
-        return mIfaces.length > 1 || (mOfflineMode && isAnyNetInterfaceAvailable);
+        return false;
     }
 
     private boolean haveInterface(String ifname) {
@@ -405,29 +412,18 @@ public class MainFragment extends Fragment {
     }
 
     private void onNetworkInterfaceChanged() {
-        String toastMessage = null;
-
         stopNetworkRadar();
 
         if (!System.reloadNetworkMapping()) {
-            String ifname = System.getIfname();
-
-            ifname = ifname == null ? getString(R.string.any_interface) : ifname;
-
-            toastMessage = String.format(getString(R.string.error_initializing_interface), ifname);
-        } else {
-            startNetworkRadar();
-            registerPlugins();
+            onInitializationError(getString(R.string.error_wlan0_required), true);
+            return;
         }
-
-        final String msg = toastMessage;
+        startNetworkRadar();
+        registerPlugins();
 
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (msg != null) {
-                    Toast.makeText(getActivity(), msg, Toast.LENGTH_LONG).show();
-                }
                 notifyMenuChanged();
             }
         });
@@ -709,10 +705,10 @@ public class MainFragment extends Fragment {
                                 try {
                                     System.reset();
 
-                                    Toast.makeText(
+                                    ToastHelper.show(
                                             getActivity(),
                                             getString(R.string.new_session_started),
-                                            Toast.LENGTH_SHORT).show();
+                                            Toast.LENGTH_SHORT);
                                 } catch (Exception e) {
                                     new FatalDialog(getString(R.string.error), e
                                             .toString(), getActivity()).show();
@@ -741,11 +737,11 @@ public class MainFragment extends Fragment {
                                     try {
                                         String filename = System.saveSession(name);
 
-                                        Toast.makeText(
+                                        ToastHelper.show(
                                                 getActivity(),
                                                 getString(R.string.session_saved_to)
                                                         + filename + " .",
-                                                Toast.LENGTH_SHORT).show();
+                                                Toast.LENGTH_SHORT);
                                     } catch (IOException e) {
                                         new ErrorDialog(getString(R.string.error),
                                                 e.toString(), getActivity())
@@ -830,7 +826,7 @@ public class MainFragment extends Fragment {
 
     public void onBackPressed() {
         if (mLastBackPressTime < java.lang.System.currentTimeMillis() - 4000) {
-            mToast = Toast.makeText(getActivity(), getString(R.string.press_back),
+            mToast = ToastHelper.make(getActivity(), getString(R.string.press_back),
                     Toast.LENGTH_SHORT);
             mToast.show();
             mLastBackPressTime = java.lang.System.currentTimeMillis();
@@ -916,8 +912,6 @@ public class MainFragment extends Fragment {
                         .findViewById(R.id.portCount) : null);
                 holder.portCountLayout = (LinearLayout) (row != null ? row
                         .findViewById(R.id.portCountLayout) : null);
-                if (isDark)
-                    holder.portCountLayout.setBackgroundResource(R.drawable.rounded_square_grey);
                 if (row != null)
                     row.setTag(holder);
             } else
@@ -932,7 +926,9 @@ public class MainFragment extends Fragment {
             } else {
                 holder.itemTitle.setText(target.toString());
             }
-            holder.itemTitle.setTextColor(ContextCompat.getColor(getActivity().getApplicationContext(), (target.isConnected() ? R.color.app_color : R.color.gray_text)));
+            holder.itemTitle.setTextColor(ContextCompat.getColor(getActivity().getApplicationContext(),
+                    target.isConnected() ? R.color.app_color
+                            : (isDark ? android.R.color.white : R.color.gray_text)));
 
             holder.itemTitle.setTypeface(null, Typeface.NORMAL);
             holder.itemImage.setImageResource(target.getDrawableResourceId());
@@ -942,6 +938,8 @@ public class MainFragment extends Fragment {
 
             holder.portCount.setText(String.format("%d", openedPorts));
             holder.portCountLayout.setVisibility(openedPorts < 1 ? View.GONE : View.VISIBLE);
+            holder.portCountLayout.setBackgroundResource(
+                    isDark ? R.drawable.rounded_square_grey : R.drawable.rounded_square);
             return row;
         }
 
@@ -1291,6 +1289,7 @@ public class MainFragment extends Fragment {
                         } else if (current != null) {
                             onConnectionLost();
                         } else if (isAnyNetInterfaceAvailable) {
+                            System.setIfname(System.REQUIRED_WLAN_IFACE);
                             onNetworkInterfaceChanged();
                         }
 

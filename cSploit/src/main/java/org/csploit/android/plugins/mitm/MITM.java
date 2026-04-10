@@ -40,6 +40,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.csploit.android.R;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.SettingsActivity;
 import org.csploit.android.SettingsFragment;
 import org.csploit.android.core.Child;
@@ -239,7 +240,7 @@ public class MITM extends Plugin
                     }
                   });
 
-                  Toast.makeText(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG).show();
+                  ToastHelper.show(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG);
                 }
               });
             }
@@ -284,7 +285,7 @@ public class MITM extends Plugin
 
           mCurrentActivity.setVisibility(View.VISIBLE);
 
-          Toast.makeText(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG).show();
+          ToastHelper.show(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG);
 
           final String code = js;
           mSpoofSession = new SpoofSession();
@@ -558,7 +559,7 @@ public class MITM extends Plugin
                     MITM.this.runOnUiThread(new Runnable() {
                       @Override
                       public void run() {
-                        Toast.makeText(MITM.this, "arpspoof error", Toast.LENGTH_LONG).show();
+                        ToastHelper.show(MITM.this, "arpspoof error", Toast.LENGTH_LONG);
                         activity.setVisibility(View.INVISIBLE);
                       }
                     });
@@ -571,9 +572,9 @@ public class MITM extends Plugin
 
                 activity.setVisibility(View.VISIBLE);
 
-                Toast.makeText(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG).show();
+                ToastHelper.show(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG);
               } catch (ChildManager.ChildNotStartedException e) {
-                Toast.makeText(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+                ToastHelper.show(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
               }
             }
           } else {
@@ -629,7 +630,7 @@ public class MITM extends Plugin
                     address = url.getHost();
 
                     activity.setVisibility(View.VISIBLE);
-                    Toast.makeText(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG).show();
+                    ToastHelper.show(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG);
 
 
                     final String faddress = address;
@@ -742,10 +743,10 @@ public class MITM extends Plugin
                                 }
                               });
 
-                              Toast.makeText(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG).show();
+                              ToastHelper.show(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG);
 
                             } catch (ChildManager.ChildNotStartedException e) {
-                              Toast.makeText(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+                              ToastHelper.show(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
                             }
                           } else
                             new ErrorDialog(getString(R.string.error), getString(R.string.error_image_url), MITM.this).show();
@@ -828,11 +829,11 @@ public class MITM extends Plugin
 
                         activity.setVisibility(View.VISIBLE);
 
-                        Toast.makeText(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG).show();
+                        ToastHelper.show(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG);
 
                       } catch (ChildManager.ChildNotStartedException e) {
                         System.errorLogging(e);
-                        Toast.makeText(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+                        ToastHelper.show(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
                       }
                     } else
                       new ErrorDialog(getString(R.string.error), getString(R.string.error_video_url), MITM.this).show();
@@ -909,11 +910,11 @@ public class MITM extends Plugin
 
                               activity.setVisibility(View.VISIBLE);
 
-                              Toast.makeText(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG).show();
+                              ToastHelper.show(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG);
 
                             } catch (ChildManager.ChildNotStartedException e) {
                               System.errorLogging(e);
-                              Toast.makeText(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+                              ToastHelper.show(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
                             }
                           } else
                             new ErrorDialog(getString(R.string.error), getString(R.string.error_js_code), MITM.this).show();
@@ -981,13 +982,13 @@ public class MITM extends Plugin
 
                   activity.setVisibility(View.VISIBLE);
 
-                  Toast.makeText(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG).show();
+                  ToastHelper.show(MITM.this, getString(R.string.tap_again), Toast.LENGTH_LONG);
 
                 } catch(PatternSyntaxException e){
                   new ErrorDialog(getString(R.string.error), getString(R.string.error_filter) + ": " + e.getDescription() + " .", MITM.this).show();
                 } catch (ChildManager.ChildNotStartedException e) {
                   System.errorLogging(e);
-                  Toast.makeText(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+                  ToastHelper.show(MITM.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
                 }
               } else
                 new ErrorDialog(getString(R.string.error), getString(R.string.error_filter), MITM.this).show();

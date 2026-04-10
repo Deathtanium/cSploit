@@ -75,6 +75,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.NoRouteToHostException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -129,6 +130,9 @@ public class System {
   private static volatile Server mServer = null;
 
   private static String mIfname = null;
+
+  /** Only this interface is used for scans and tools. */
+  public static final String REQUIRED_WLAN_IFACE = "wlan0";
   private static String mStoragePath = null;
   private static String mSessionName = null;
 
@@ -286,15 +290,31 @@ public class System {
     reloadTools();
     mCoreInitialized = true;
     Services.getNetworkRadar().onAutoScanChanged();
-    getNetwork().onCoreAttached();
+    // Application.onCreate may have failed before uncaughtReloadNetworkMapping(); retry so gateway attach runs when possible.
+    if (getNetwork() == null) {
+      reloadNetworkMapping();
+    }
+    Network net = getNetwork();
+    if (net != null) {
+      net.onCoreAttached();
+    }
   }
 
   public static void setIfname(String ifname) {
-    mIfname = ifname;
+    mIfname = REQUIRED_WLAN_IFACE;
   }
 
   public static String getIfname() {
-    return mIfname;
+    return mIfname != null ? mIfname : REQUIRED_WLAN_IFACE;
+  }
+
+  /** Kernel has a wlan0 device (does not guarantee IPv4 is configured). */
+  public static boolean hasWlanInterface() {
+    try {
+      return NetworkInterface.getByName(REQUIRED_WLAN_IFACE) != null;
+    } catch (SocketException e) {
+      return false;
+    }
   }
 
   public static boolean reloadNetworkMapping() {
@@ -310,7 +330,8 @@ public class System {
   }
 
   private static void uncaughtReloadNetworkMapping() throws UnknownHostException, SocketException {
-    mNetwork = new Network(mContext, mIfname);
+    mIfname = REQUIRED_WLAN_IFACE;
+    mNetwork = new Network(mContext, REQUIRED_WLAN_IFACE);
     mIfname = mNetwork.getInterface().getName();
 
     reset();

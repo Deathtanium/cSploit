@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/statAddress"
         android:paddingTop="4dp"
-        android:textColor="@color/gray_text"
+        android:textColor="?android:attr/textColorSecondary"
         android:textSize="14sp" />
 
 </RelativeLayout>

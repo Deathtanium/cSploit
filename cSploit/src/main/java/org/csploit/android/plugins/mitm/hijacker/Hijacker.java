@@ -45,6 +45,8 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import org.csploit.android.R;
+import org.csploit.android.helpers.MainLayoutHelper;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.Logger;
 import org.csploit.android.core.System;
@@ -389,6 +391,7 @@ public class Hijacker extends AppCompatActivity {
 		setTitle(System.getCurrentTarget() + " > MITM > "
 				+ getString(R.string.session_sniffer));
 		setContentView(R.layout.plugin_mitm_hijacker);
+		MainLayoutHelper.installInsetsForActivity(this);
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 		mHijackToggleButton = (ToggleButton) findViewById(R.id.hijackToggleButton);
@@ -446,11 +449,11 @@ public class Hijacker extends AppCompatActivity {
 											String filename = session
 													.save(name);
 
-											Toast.makeText(
+											ToastHelper.show(
 													Hijacker.this,
 													getString(R.string.session_saved_to)
 															+ filename + " .",
-													Toast.LENGTH_SHORT).show();
+													Toast.LENGTH_SHORT);
 										} catch (IOException e) {
 											new ErrorDialog(
 													getString(R.string.error),
@@ -518,7 +521,7 @@ public class Hijacker extends AppCompatActivity {
       });
     } catch (ChildManager.ChildNotStartedException e) {
       Logger.error(e.getMessage());
-      Toast.makeText(Hijacker.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+      ToastHelper.show(Hijacker.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
     }
   }
 

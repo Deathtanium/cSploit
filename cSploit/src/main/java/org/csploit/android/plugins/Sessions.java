@@ -29,6 +29,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import org.csploit.android.R;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.core.Plugin;
 import org.csploit.android.core.System;
 import org.csploit.android.gui.Console;
@@ -93,17 +94,17 @@ public class Sessions extends Plugin {
 
                 @Override
                 public void onEnd(int exitValue) {
-                  Toast.makeText(Sessions.this,"command returned "+exitValue,Toast.LENGTH_LONG).show();
+                  ToastHelper.show(Sessions.this,"command returned "+exitValue,Toast.LENGTH_LONG);
                 }
 
                 @Override
                 public void onRpcClosed() {
-                  Toast.makeText(Sessions.this,"RPC channel has been closed",Toast.LENGTH_LONG).show();
+                  ToastHelper.show(Sessions.this,"RPC channel has been closed",Toast.LENGTH_LONG);
                 }
 
                 @Override
                 public void onTimedOut() {
-                  Toast.makeText(Sessions.this,"command timed out",Toast.LENGTH_LONG).show();
+                  ToastHelper.show(Sessions.this,"command timed out",Toast.LENGTH_LONG);
                 }
               });
               break;

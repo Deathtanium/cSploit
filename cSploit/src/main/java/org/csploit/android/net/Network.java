@@ -26,10 +26,11 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.Patterns;
 import org.apache.commons.net.util.SubnetUtils;
 import org.csploit.android.core.Logger;
 import org.csploit.android.core.System;
+
+import static org.csploit.android.core.System.REQUIRED_WLAN_IFACE;
 import org.csploit.android.helpers.NetworkHelper;
 
 import java.lang.reflect.Method;
@@ -116,18 +117,12 @@ public class Network implements Comparable<Network> {
     mBase = new IP4Address(mInfo.netmask & mInfo.gateway);
     mTetheredIfacesMethod = getTetheredIfacesMethod(mConnectivityManager);
 
-    if (iface != null) {
-      if (initNetworkInterface(iface))
-        return;
-    } else {
-      for (String ifname : getAvailableInterfaces()) {
-        if (initNetworkInterface(ifname)) {
-          return;
-        }
-      }
-    }
+    String useIface = (iface != null && !iface.isEmpty()) ? iface : REQUIRED_WLAN_IFACE;
+    if (initNetworkInterface(useIface))
+      return;
 
-    throw new NoRouteToHostException("Not connected to any network.");
+    Logger.error("Network: interface not usable: " + useIface);
+    throw new NoRouteToHostException("Not connected on interface: " + useIface);
   }
 
   private static Method getTetheredIfacesMethod(ConnectivityManager connectivityManager) {
@@ -147,19 +142,21 @@ public class Network implements Comparable<Network> {
         iface = getAvailableInterfaces().get(0);
 
       mInterface = NetworkInterface.getByName(iface);
+      if (mInterface == null) {
+        Logger.error("Network: no such interface: " + iface);
+        return false;
+      }
 
       if (mInterface.getInterfaceAddresses().isEmpty()) {
         return false;
       }
 
       for (InterfaceAddress ia : mInterface.getInterfaceAddresses()) {
-        if(Patterns.IP_ADDRESS.matcher(ia.getAddress().getHostAddress()).matches()) {
+        if (ia.getAddress() instanceof Inet4Address) {
           ifaceAddress = ia;
           Logger.warning("interfaceAddress: " + ia.getAddress().getHostAddress() + "/" + Short.toString(ia.getNetworkPrefixLength()));
           break;
         }
-        else
-          Logger.error("not valid ip: " + ia.getAddress().getHostAddress() + "/" + Short.toString(ia.getNetworkPrefixLength()));
       }
       if (ifaceAddress == null){
         return false;

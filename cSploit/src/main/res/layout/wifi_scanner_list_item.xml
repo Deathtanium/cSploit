@@ -45,7 +45,7 @@
         android:fontFamily="sans-serif-condensed"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
-        android:textColor="@color/gray_text"
+        android:textColor="?android:attr/textColorSecondary"
         android:textSize="14sp" />
 
     <ImageView

@@ -30,6 +30,8 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import org.csploit.android.R;
+import org.csploit.android.helpers.MainLayoutHelper;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.Logger;
 import org.csploit.android.core.System;
@@ -55,17 +57,18 @@ public class DNSSpoofing extends AppCompatActivity {
 	private SpoofSession mSpoofSession = null;
 
     	public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-
 		SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
-		Boolean isDark = themePrefs.getBoolean("isDark", false);
-		if (isDark)
+		boolean isDark = themePrefs.getBoolean("isDark", false);
+		if (isDark) {
 			setTheme(R.style.DarkTheme);
-		else
+		} else {
 			setTheme(R.style.AppTheme);
+		}
+            super.onCreate(savedInstanceState);
 
 		setTitle(System.getCurrentTarget() + " > MITM > DNS spoofing");
 		setContentView(R.layout.plugin_mitm_dns_spoofing);
+		MainLayoutHelper.installInsetsForActivity(this);
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 		mTextDnsList = (TextView) findViewById(R.id.textViewDNSList);
@@ -150,11 +153,11 @@ public class DNSSpoofing extends AppCompatActivity {
             fos.write(mTextDnsList.getText().toString().getBytes());
             fos.close();
 
-            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+            ToastHelper.show(this, "Saved", Toast.LENGTH_SHORT);
         }
         catch (Exception e){
             Logger.error("readDNSList() error: " + e.getLocalizedMessage());
-            Toast.makeText(this, "Error: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+            ToastHelper.show(this, "Error: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT);
         }
     }
 
@@ -167,7 +170,7 @@ public class DNSSpoofing extends AppCompatActivity {
             Logger.info("DNSSpoofing.onevent() line: " + line);
 
             if (line.contains("spoofed to"))
-                Toast.makeText(DNSSpoofing.this, line, Toast.LENGTH_LONG).show();
+                ToastHelper.show(DNSSpoofing.this, line, Toast.LENGTH_LONG);
 
         }
 
@@ -175,7 +178,7 @@ public class DNSSpoofing extends AppCompatActivity {
         public void onStderr(String line)
         {
             if (line.contains("spoofed to"))
-                Toast.makeText(DNSSpoofing.this, line, Toast.LENGTH_LONG).show();
+                ToastHelper.show(DNSSpoofing.this, line, Toast.LENGTH_LONG);
         }
 
         @Override
@@ -188,7 +191,7 @@ public class DNSSpoofing extends AppCompatActivity {
             @Override
             public void run() {
               if(exitValue!=0) {
-                Toast.makeText(DNSSpoofing.this, "ettercap returned #" + exitValue, Toast.LENGTH_LONG).show();
+                ToastHelper.show(DNSSpoofing.this, "ettercap returned #" + exitValue, Toast.LENGTH_LONG);
               }
               setStoppedState();
             }
@@ -214,7 +217,7 @@ public class DNSSpoofing extends AppCompatActivity {
           DNSSpoofing.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-              Toast.makeText(DNSSpoofing.this, "ettercap killed by signal #" + signal, Toast.LENGTH_LONG).show();
+              ToastHelper.show(DNSSpoofing.this, "ettercap killed by signal #" + signal, Toast.LENGTH_LONG);
               setStoppedState();
             }
           });
@@ -228,7 +231,7 @@ public class DNSSpoofing extends AppCompatActivity {
     } catch (ChildManager.ChildNotStartedException e) {
       System.errorLogging(e);
       mSniffToggleButton.setChecked(false);
-      Toast.makeText(DNSSpoofing.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+      ToastHelper.show(DNSSpoofing.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
     }
 	}
 

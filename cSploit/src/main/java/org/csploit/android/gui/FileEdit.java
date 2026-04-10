@@ -8,6 +8,8 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import org.csploit.android.R;
+import org.csploit.android.helpers.MainLayoutHelper;
+import org.csploit.android.helpers.ToastHelper;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,6 +26,7 @@ public class FileEdit extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.file_edit);
+        MainLayoutHelper.installInsetsForActivity(this);
         setTitle("");
 
         mCmdSave = (Button) findViewById(R.id.cmdSave);
@@ -52,7 +55,7 @@ public class FileEdit extends AppCompatActivity {
         BufferedReader inputReader = null;
 
         if (_path == null){
-            Toast.makeText(this, "Error: No file path provided", Toast.LENGTH_LONG).show();
+            ToastHelper.show(this, "Error: No file path provided", Toast.LENGTH_LONG);
             return "";
         }
 
@@ -65,7 +68,7 @@ public class FileEdit extends AppCompatActivity {
             }
         }
         catch (Exception e){
-            Toast.makeText(this, "Error loading \"" + _path + "\"\n\n" + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            ToastHelper.show(this, "Error loading \"" + _path + "\"\n\n" + e.getLocalizedMessage(), Toast.LENGTH_LONG);
         }
         finally {
             try {
@@ -85,12 +88,12 @@ public class FileEdit extends AppCompatActivity {
             fos = new FileOutputStream(f);
             fos.write(_file_text.getBytes());
 
-            Toast.makeText(this, getString(R.string.saved), Toast.LENGTH_SHORT).show();
+            ToastHelper.show(this, getString(R.string.saved), Toast.LENGTH_SHORT);
 
             return true;
         }
         catch (Exception e){
-            Toast.makeText(this, "Error saving \"" + _path + "\"\n\n" + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            ToastHelper.show(this, "Error saving \"" + _path + "\"\n\n" + e.getLocalizedMessage(), Toast.LENGTH_LONG);
         }
         finally {
             try {

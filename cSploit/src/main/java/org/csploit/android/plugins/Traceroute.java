@@ -33,6 +33,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.csploit.android.R;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.Plugin;
 import org.csploit.android.core.System;
@@ -76,7 +77,7 @@ public class Traceroute extends Plugin {
       mRunning = true;
     } catch (ChildManager.ChildNotStartedException e) {
       System.errorLogging(e);
-      Toast.makeText(Traceroute.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+      ToastHelper.show(Traceroute.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
     }
   }
 

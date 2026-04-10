@@ -42,6 +42,8 @@ import android.widget.ToggleButton;
 import org.apache.commons.compress.utils.IOUtils;
 import org.csploit.android.ActionActivity;
 import org.csploit.android.R;
+import org.csploit.android.helpers.MainLayoutHelper;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.core.Child;
 import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.System;
@@ -286,17 +288,18 @@ public class Sniffer extends AppCompatActivity implements AdapterView.OnItemClic
   }
 
   public void onCreate(Bundle savedInstanceState){
-    super.onCreate(savedInstanceState);
     SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
-  	Boolean isDark = themePrefs.getBoolean("isDark", false);
-
-    if (isDark)
+    boolean isDark = themePrefs.getBoolean("isDark", false);
+    if (isDark) {
       setTheme(R.style.DarkTheme);
-    else
+    } else {
       setTheme(R.style.AppTheme);
+    }
+    super.onCreate(savedInstanceState);
 
     setTitle(System.getCurrentTarget() + " > MITM > Sniffer");
     setContentView(R.layout.plugin_mitm_sniffer);
+    MainLayoutHelper.installInsetsForActivity(this);
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
     mSniffToggleButton = (ToggleButton) findViewById(R.id.sniffToggleButton);
@@ -365,9 +368,9 @@ public class Sniffer extends AppCompatActivity implements AdapterView.OnItemClic
 
         setStoppedState();
 
-        Toast.makeText(Sniffer.this,
+        ToastHelper.show(Sniffer.this,
                 getString(R.string.selected_) + System.getCurrentTarget(),
-                Toast.LENGTH_SHORT).show();
+                Toast.LENGTH_SHORT);
 
         startActivity(new Intent(Sniffer.this,
                 ActionActivity.class));
@@ -478,7 +481,7 @@ public class Sniffer extends AppCompatActivity implements AdapterView.OnItemClic
     Sniffer.this.runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        Toast.makeText(Sniffer.this, text, Toast.LENGTH_LONG).show();
+        ToastHelper.show(Sniffer.this, text, Toast.LENGTH_LONG);
       }
     });
   }
@@ -504,7 +507,7 @@ public class Sniffer extends AppCompatActivity implements AdapterView.OnItemClic
       pcapfile.createNewFile();
     }catch(IOException io)
     {
-      Toast.makeText(this, "File not created: " + io.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+      ToastHelper.show(this, "File not created: " + io.getLocalizedMessage(), Toast.LENGTH_LONG);
       return;
     }
 
@@ -599,7 +602,7 @@ public class Sniffer extends AppCompatActivity implements AdapterView.OnItemClic
             Sniffer.this.runOnUiThread( new Runnable() {
               @Override
               public void run() {
-                Toast.makeText(Sniffer.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+                ToastHelper.show(Sniffer.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
                 setStoppedState();
               }
             });

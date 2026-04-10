@@ -77,8 +77,7 @@
             android:name=".SettingsActivity"
             android:configChanges="orientation|screenSize"
             android:exported="false"
-            android:label="@string/title_activity_main"
-            android:theme="@style/Theme.AppCompat.Light" />
+            android:label="@string/title_activity_main" />
         <activity
             android:name=".gui.DirectoryPicker"
             android:configChanges="orientation|screenSize"

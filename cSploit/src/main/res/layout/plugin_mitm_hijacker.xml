@@ -47,7 +47,7 @@
         android:padding="8dp"
         android:text="@string/start_hijack"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="@color/gray_text" />
+        android:textColor="?android:attr/textColorSecondary" />
 
     <ListView
         android:id="@+id/listView"

@@ -20,7 +20,10 @@ package org.csploit.android;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.csploit.android.helpers.MainLayoutHelper;
 
 public class ActionActivity extends AppCompatActivity {
 
@@ -28,13 +31,14 @@ public class ActionActivity extends AppCompatActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
     SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
-    if (themePrefs.getBoolean("isDark", false))
-      setTheme(R.style.DarkTheme);
-    else
-      setTheme(R.style.AppTheme);
-    setContentView(R.layout.main);
+    if (themePrefs.getBoolean("isDark", false)) {
+      setTheme(R.style.DarkTheme_Main);
+    } else {
+      setTheme(R.style.AppTheme_Main);
+    }
+    super.onCreate(savedInstanceState);
+    MainLayoutHelper.installMainLayoutWithToolbar(this);
     if (findViewById(R.id.mainframe) != null) {
       if (savedInstanceState != null) {
         return;
@@ -47,6 +51,10 @@ public class ActionActivity extends AppCompatActivity {
 
   @Override
   public void onBackPressed() {
-    f.onBackPressed();
+    if (f != null) {
+      f.onBackPressed();
+    } else {
+      super.onBackPressed();
+    }
   }
 }

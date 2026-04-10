@@ -37,6 +37,9 @@ import androidx.preference.PreferenceManager;
 
 import android.widget.Toast;
 
+import org.csploit.android.helpers.MainLayoutHelper;
+import org.csploit.android.helpers.ToastHelper;
+
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -48,13 +51,13 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
     SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
     if (themePrefs.getBoolean("isDark", false)) {
-      setTheme(R.style.DarkTheme);
+      setTheme(R.style.DarkTheme_Main);
     } else {
-      setTheme(R.style.AppTheme);
+      setTheme(R.style.AppTheme_Main);
     }
+    super.onCreate(savedInstanceState);
 
     if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean(PREF_LAB_USE_ACK_V1, false)) {
       showLabAcknowledgmentDialog(savedInstanceState);
@@ -90,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         mNotificationManager.createNotificationChannel(mChannel);
       }
     }
-    setContentView(R.layout.main);
+    MainLayoutHelper.installMainLayoutWithToolbar(this);
     if (findViewById(R.id.mainframe) != null) {
       if (savedInstanceState != null) {
         return;
@@ -140,9 +143,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 if (allGranted) {
-                    Toast.makeText(this, R.string.permissions_succeed, Toast.LENGTH_LONG).show();
+                    ToastHelper.show(this, R.string.permissions_succeed, Toast.LENGTH_LONG);
                 } else {
-                    Toast.makeText(this, R.string.permissions_fail, Toast.LENGTH_LONG).show();
+                    ToastHelper.show(this, R.string.permissions_fail, Toast.LENGTH_LONG);
                     finish();
                 }
                 break;

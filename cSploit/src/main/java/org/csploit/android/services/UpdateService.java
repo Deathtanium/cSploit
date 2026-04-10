@@ -34,6 +34,8 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 
+import org.csploit.android.helpers.ContextReceiverCompat;
+
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -284,6 +286,7 @@ public class UpdateService extends Service
     mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
     // get notification builder
     mBuilder = new NotificationCompat.Builder(this, getBaseContext().getString(R.string.csploitChannelId));
+    mBuilder.setColorized(false);
     // create a broadcast receiver to get actions
     // performed on the notification by the user
     mReceiver = new BroadcastReceiver() {
@@ -299,7 +302,7 @@ public class UpdateService extends Service
       }
     };
     // register our receiver
-    registerReceiver(mReceiver,new IntentFilter(NOTIFICATION_CANCELLED));
+    ContextReceiverCompat.registerNotExported(this, mReceiver, new IntentFilter(NOTIFICATION_CANCELLED));
     // set common notification actions
     mBuilder.setDeleteIntent(PendingIntent.getBroadcast(this, CANCEL_CODE, new Intent(NOTIFICATION_CANCELLED), PENDING_INTENT_FLAGS));
     mBuilder.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(), PENDING_INTENT_FLAGS));

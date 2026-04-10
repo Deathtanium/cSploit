@@ -31,7 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/sessionIcon"
         android:layout_below="@id/sessionTitle"
-        android:textColor="@color/gray_text"
+        android:textColor="?android:attr/textColorSecondary"
         android:textSize="14sp" />
 
 </RelativeLayout>

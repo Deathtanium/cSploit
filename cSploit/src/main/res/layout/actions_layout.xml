@@ -18,17 +18,17 @@
         android:text="@string/select_module"
         android:textAllCaps="true"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="@color/gray_text" />
+        android:textColor="?android:attr/textColorSecondary" />
 
     <!--suppress AndroidDomInspection -->
     <ListView
         android:id="@+id/android_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:animateLayoutChanges="true"
         android:divider="#00ffffff"
         android:dividerHeight="6dp"
         android:showDividers="none" />
-        android:divider="#00ffffff" />
 
 </LinearLayout>

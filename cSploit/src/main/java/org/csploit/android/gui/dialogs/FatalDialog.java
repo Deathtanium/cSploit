@@ -26,15 +26,27 @@ import android.text.method.LinkMovementMethod;
 import android.widget.TextView;
 
 public class FatalDialog extends AlertDialog{
-  public FatalDialog(String title, String message, boolean html, final FragmentActivity activity){
+
+  public FatalDialog(String title, String message, boolean html, final FragmentActivity activity) {
+    this(title, message, html, activity, false);
+  }
+
+  public FatalDialog(String title, String message, final FragmentActivity activity) {
+    this(title, message, false, activity, false);
+  }
+
+  /**
+   * @param exitApp if true, {@link FragmentActivity#finishAffinity()} is used so the whole task exits.
+   */
+  public FatalDialog(String title, String message, boolean html, final FragmentActivity activity, final boolean exitApp) {
     super(activity);
 
     this.setTitle(title);
 
-    if(!html)
+    if (!html)
       this.setMessage(message);
 
-    else{
+    else {
       TextView text = new TextView(activity);
 
       text.setMovementMethod(LinkMovementMethod.getInstance());
@@ -45,14 +57,13 @@ public class FatalDialog extends AlertDialog{
     }
 
     this.setCancelable(false);
-    this.setButton(BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener(){
-      public void onClick(DialogInterface dialog, int id){
-        activity.finish();
+    this.setButton(BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
+      public void onClick(DialogInterface dialog, int id) {
+        if (exitApp)
+          activity.finishAffinity();
+        else
+          activity.finish();
       }
     });
-  }
-
-  public FatalDialog(String title, String message, final FragmentActivity activity){
-    this(title, message, false, activity);
   }
 }

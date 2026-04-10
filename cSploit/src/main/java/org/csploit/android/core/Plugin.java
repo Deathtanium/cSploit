@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.MenuItem;
 
 import org.csploit.android.R;
+import org.csploit.android.helpers.MainLayoutHelper;
 import org.csploit.android.net.Target;
 import org.csploit.android.net.metasploit.RPCClient;
 
@@ -99,6 +100,7 @@ public abstract class Plugin extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setTitle(System.getCurrentTarget() + " > " + getString( mNameStringId ) );
     setContentView(mLayoutId);
+    MainLayoutHelper.installInsetsForActivity(this);
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
   }
 

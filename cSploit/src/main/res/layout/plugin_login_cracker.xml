@@ -185,7 +185,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/stopped"
                     android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:textColor="@color/gray_text"/>
+                    android:textColor="?android:attr/textColorSecondary"/>
 
             <ProgressBar
                     android:id="@+id/progressBar"

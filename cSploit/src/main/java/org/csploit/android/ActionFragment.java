@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import org.csploit.android.core.Plugin;
 import org.csploit.android.core.System;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.gui.dialogs.FinishDialog;
 import org.csploit.android.net.Target;
 
@@ -45,13 +46,10 @@ public class ActionFragment extends Fragment {
     @Override
     public void onViewCreated(View v, Bundle savedInstanceState) {
         SharedPreferences themePrefs = getActivity().getSharedPreferences("THEME", 0);
-        Boolean isDark = themePrefs.getBoolean("isDark", false);
+        boolean isDark = themePrefs.getBoolean("isDark", false);
         if (isDark) {
-            getActivity().setTheme(R.style.DarkTheme);
             v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window_dark));
-        }
-        else {
-            getActivity().setTheme(R.style.AppTheme);
+        } else {
             v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window));
         }
         mTarget = org.csploit.android.core.System.getCurrentTarget();
@@ -72,7 +70,7 @@ public class ActionFragment extends Fragment {
                         System.setCurrentPlugin(plugin);
 
                         if (plugin.hasLayoutToShow()) {
-                            Toast.makeText(getActivity(), getString(R.string.selected) + getString(plugin.getName()), Toast.LENGTH_SHORT).show();
+                            ToastHelper.show(getActivity(), getString(R.string.selected) + getString(plugin.getName()), Toast.LENGTH_SHORT);
 
                             startActivity(new Intent(
                                     getActivity(),

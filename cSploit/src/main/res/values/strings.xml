@@ -116,6 +116,8 @@
     <string name="only_4_root">This application can run only on rooted devices.</string>
     <string name="initializing">Initializing&#8230;</string>
     <string name="initialization_error">Initialization Error</string>
+    <string name="error_wlan0_missing">This build requires a wlan0 network interface. It was not found on this device.</string>
+    <string name="error_wlan0_required">This build uses wlan0 only. Connect to Wi‑Fi so wlan0 has an IPv4 address, then open the app again.</string>
     <string name="target_alias">Target Alias</string>
     <string name="set_alias">Set an alias for this target:</string>
     <string name="no_connectivity">No connectivity available.</string>

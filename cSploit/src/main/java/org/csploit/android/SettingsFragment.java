@@ -32,6 +32,8 @@ import org.csploit.android.core.ChildManager;
 import org.csploit.android.core.ExecChecker;
 import org.csploit.android.core.Logger;
 import org.csploit.android.core.System;
+import org.csploit.android.helpers.ContextReceiverCompat;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.gui.DirectoryPicker;
 import org.csploit.android.gui.dialogs.ChoiceDialog;
 import org.csploit.android.gui.dialogs.ConfirmDialog;
@@ -65,11 +67,6 @@ public class SettingsFragment extends Fragment {
     @SuppressWarnings("ConstantConditions")
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        SharedPreferences themePrefs = getActivity().getSharedPreferences("THEME", 0);
-        if (themePrefs.getBoolean("isDark", false))
-            getActivity().setTheme(R.style.PrefsThemeDark);
-        else
-            getActivity().setTheme(R.style.PrefsTheme);
         super.onCreate(savedInstanceState);
         getActivity().getSupportFragmentManager().beginTransaction()
                 .replace(android.R.id.content, new PrefsFrag())
@@ -104,10 +101,8 @@ public class SettingsFragment extends Fragment {
                 SharedPreferences themePrefs = getActivity().getSharedPreferences("THEME", 0);
                 Boolean isDark = themePrefs.getBoolean("isDark", false);
                 if (isDark) {
-                    getActivity().setTheme(R.style.PrefsThemeDark);
                     v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window_dark));
                 } else {
-                    getActivity().setTheme(R.style.PrefsTheme);
                     v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window));
                 }
             }
@@ -115,11 +110,6 @@ public class SettingsFragment extends Fragment {
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
-            SharedPreferences themePrefs = getActivity().getBaseContext().getSharedPreferences("THEME", 0);
-            if (themePrefs.getBoolean("isDark", false))
-                getContext().setTheme(R.style.PrefsThemeDark);
-            else
-                getActivity().setTheme(R.style.PrefsTheme);
             super.onCreate(savedInstanceState);
 
             mSavePath = getPreferenceScreen().findPreference("PREF_SAVE_PATH");
@@ -143,7 +133,7 @@ public class SettingsFragment extends Fragment {
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     SharedPreferences themePrefs = getActivity().getBaseContext().getSharedPreferences("THEME", 0);
                     themePrefs.edit().putBoolean("isDark", (Boolean) newValue).apply();
-                    Toast.makeText(getActivity().getBaseContext(), getString(R.string.please_restart), Toast.LENGTH_LONG).show();
+                    ToastHelper.show(getActivity().getBaseContext(), getString(R.string.please_restart), Toast.LENGTH_LONG);
                     return true;
                 }
             });
@@ -268,13 +258,13 @@ public class SettingsFragment extends Fragment {
                 }
 
                 if (!folder.exists())
-                    Toast.makeText(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_exists), Toast.LENGTH_SHORT).show();
+                    ToastHelper.show(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_exists), Toast.LENGTH_SHORT);
 
                 else if (!folder.canWrite())
-                    Toast.makeText(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_writable), Toast.LENGTH_SHORT).show();
+                    ToastHelper.show(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_writable), Toast.LENGTH_SHORT);
 
                 else if (checker != null && !checker.canExecuteInDir(path))
-                    Toast.makeText(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_executable), Toast.LENGTH_LONG).show();
+                    ToastHelper.show(getActivity(), getString(R.string.pref_folder) + " " + path + " " + getString(R.string.pref_err_executable), Toast.LENGTH_LONG);
 
                 else {
                     //noinspection ConstantConditions
@@ -401,7 +391,7 @@ public class SettingsFragment extends Fragment {
             }
 
             if (message != null)
-                Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+                ToastHelper.show(getActivity(), message, Toast.LENGTH_SHORT);
 
             System.onSettingChanged(key);
         }
@@ -511,7 +501,7 @@ public class SettingsFragment extends Fragment {
             IntentFilter filter = new IntentFilter();
             filter.addAction(SETTINGS_WIPE_DONE);
             filter.addAction(SETTINGS_MSF_BRANCHES_AVAILABLE);
-            getActivity().registerReceiver(mReceiver, filter);
+            ContextReceiverCompat.registerNotExported(getActivity(), mReceiver, filter);
         }
 
         private void getMsfBranches() {

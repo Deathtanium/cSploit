@@ -33,6 +33,7 @@ import android.widget.Toast;
 
 import org.csploit.android.R;
 import org.csploit.android.core.ChildManager;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.core.Plugin;
 import org.csploit.android.core.System;
 import org.csploit.android.helpers.ThreadHelper;
@@ -132,7 +133,7 @@ public class Inspector extends Plugin{
       mRunning = true;
     } catch (ChildManager.ChildNotStartedException e) {
       System.errorLogging(e);
-      Toast.makeText(Inspector.this, getString(R.string.child_not_started), Toast.LENGTH_LONG).show();
+      ToastHelper.show(Inspector.this, getString(R.string.child_not_started), Toast.LENGTH_LONG);
     }
   }
 

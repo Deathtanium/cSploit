@@ -50,6 +50,7 @@ import android.widget.Toast;
 
 import org.csploit.android.core.ManagedReceiver;
 import org.csploit.android.core.System;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.gui.dialogs.ErrorDialog;
 import org.csploit.android.gui.dialogs.InputDialog;
 import org.csploit.android.gui.dialogs.InputDialog.InputDialogListener;
@@ -123,7 +124,7 @@ public class WifiScannerFragment extends ListFragment
     public void onSuccessfulConnection(){
         if(mCurrentKey != null){
             mStatusText.setText(Html.fromHtml(getString(R.string.connected_to) + mCurrentAp.SSID + getString(R.string.connected_to2) + mCurrentKey + getString(R.string.connected_to3)));
-            Toast.makeText(getActivity(), getString(R.string.wifi_key_copied), Toast.LENGTH_SHORT).show();
+            ToastHelper.show(getActivity(), getString(R.string.wifi_key_copied), Toast.LENGTH_SHORT);
             mClipboard.setText(mCurrentKey);
         } else
             mStatusText.setText(Html.fromHtml(getString(R.string.connected_to) + mCurrentAp.SSID + "</b> !"));
@@ -158,12 +159,6 @@ public class WifiScannerFragment extends ListFragment
     @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
-        SharedPreferences themePrefs = getActivity().getSharedPreferences("THEME", 0);
-        Boolean isDark = themePrefs.getBoolean("isDark", false);
-        if (isDark)
-            getActivity().setTheme(R.style.DarkTheme);
-        else
-            getActivity().setTheme(R.style.AppTheme);
         setHasOptionsMenu(true);
     }
 
@@ -177,13 +172,10 @@ public class WifiScannerFragment extends ListFragment
     @Override
     public void onViewCreated(View v, Bundle savedInstanceState) {
         SharedPreferences themePrefs = getActivity().getSharedPreferences("THEME", 0);
-        Boolean isDark = themePrefs.getBoolean("isDark", false);
+        boolean isDark = themePrefs.getBoolean("isDark", false);
         if (isDark) {
-            getActivity().setTheme(R.style.DarkTheme);
             v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window_dark));
-        }
-        else {
-            getActivity().setTheme(R.style.AppTheme);
+        } else {
             v.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.background_window));
         }
         mWifiManager = (WifiManager) getActivity().getSystemService(Context.WIFI_SERVICE);

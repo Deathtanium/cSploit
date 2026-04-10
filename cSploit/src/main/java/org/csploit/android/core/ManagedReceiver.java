@@ -23,6 +23,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
+import org.csploit.android.helpers.ContextReceiverCompat;
+
 public abstract class ManagedReceiver extends BroadcastReceiver{
   private boolean mRegistered = false;
   private Context mContext = null;
@@ -43,7 +45,7 @@ public abstract class ManagedReceiver extends BroadcastReceiver{
     if(mRegistered)
       unregister();
 
-    context.registerReceiver(this, getFilter());
+    ContextReceiverCompat.registerNotExported(context, this, getFilter());
     mRegistered = true;
     mContext = context;
   }

@@ -2,23 +2,35 @@
 <resources>
 
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="android:windowActionBarOverlay">false</item>
         <item name="actionBarStyle">@style/Theme.CSploitActionBarStyle</item>
         <item name="android:windowBackground">@color/background_window</item>
+        <!-- So layouts using ?android:attr/textColorSecondary match legacy @color/gray_text on light. -->
+        <item name="android:textColorSecondary">@color/gray_text</item>
         <item name="colorPrimary">@color/app_color</item>
         <!-- darker variant of colorPrimary (for status bar, contextual app bars) -->
         <item name="colorPrimaryDark">#0082b2</item>
+        <item name="android:statusBarColor">#0082b2</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <!-- theme UI controls like checkboxes and text fields -->
         <item name="colorAccent">@color/selectable_blue</item>
         <item name="actionModeBackground">@color/app_color_dark</item>
         <item name="colorControlHighlight">@color/selectable_blue</item>
         <item name="android:colorBackground">@color/background_window</item>
+        <item name="colorSurface">@color/background_window</item>
+        <item name="colorOnSurface">#DE000000</item>
+        <item name="alertDialogTheme">@style/Theme.CSploit.AlertDialog</item>
         <item name="android:animation">@style/AppAnimation</item>
     </style>
 
     <!-- Dark theme aligned with Hijacker (grey toolbar, indigo status bar / accents) -->
 
-    <style name="DarkTheme" parent="Theme.MaterialComponents">
+    <style name="DarkTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="android:windowActionBarOverlay">false</item>
         <item name="actionBarStyle">@style/Theme.CSploitActionBarDarkStyle</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="actionModeBackground">@color/colorPrimary</item>
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
@@ -29,14 +41,94 @@
         <item name="android:statusBarColor">@color/colorPrimaryDark</item>
         <item name="android:navigationBarColor">@color/colorPrimary</item>
         <item name="android:animation">@style/AppAnimation</item>
+        <!-- Default body / label text: white; keep blues via @color/app_color / colorAccent in layouts. -->
+        <item name="android:textColorPrimary">#FFFFFFFF</item>
+        <item name="android:textColorSecondary">#FFFFFFFF</item>
+        <item name="android:textColorTertiary">#FFFFFFFF</item>
+        <item name="android:textColorHint">#99FFFFFF</item>
+        <item name="colorControlNormal">#FFFFFFFF</item>
+        <item name="colorSurface">@color/background_window_dark</item>
+        <item name="colorOnSurface">#FFFFFFFF</item>
+        <item name="alertDialogTheme">@style/Theme.CSploit.AlertDialog</item>
+    </style>
+
+    <!-- Used only as ContextThemeWrapper for {@link org.csploit.android.helpers.ToastHelper}. -->
+    <style name="ThemeOverlay_ToastReadable" parent="ThemeOverlay.AppCompat.Light">
+    </style>
+
+    <!-- Light dialog so title/body/button labels stay dark-on-light when the activity uses DarkTheme (white textColorPrimary). -->
+    <style name="Theme.CSploit.AlertDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="colorSurface">@android:color/white</item>
+        <item name="colorOnSurface">#DE000000</item>
+        <item name="android:textColorPrimary">#DE000000</item>
+        <item name="android:textColorSecondary">#99000000</item>
+        <item name="colorPrimary">@color/app_color</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+    </style>
+
+    <!-- MainActivity only: Toolbar in layout; avoids content drawing under the action bar (API 33+). -->
+    <style name="AppTheme.Main" parent="AppTheme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:enforceStatusBarContrast">true</item>
+        <item name="android:enforceNavigationBarContrast">true</item>
+    </style>
+
+    <style name="DarkTheme.Main" parent="DarkTheme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:enforceStatusBarContrast">true</item>
+        <item name="android:enforceNavigationBarContrast">true</item>
     </style>
 
     <style name="PrefsTheme" parent="AppTheme">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
     </style>
 
+    <!-- Same as AppTheme.Main: single Toolbar in layout is the app bar (see MainLayoutHelper). -->
+    <style name="PrefsTheme.Main" parent="PrefsTheme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:enforceStatusBarContrast">true</item>
+        <item name="android:enforceNavigationBarContrast">true</item>
+    </style>
+
+    <!-- DarkTheme is Light-based; override text + preference overlay so rows are readable on #121212. -->
     <style name="PrefsThemeDark" parent="DarkTheme">
-        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+        <item name="preferenceTheme">@style/CsploitPreferenceOverlayDark</item>
+        <item name="android:textColorPrimary">@color/settings_text_primary_dark</item>
+        <item name="android:textColorSecondary">@color/settings_text_secondary_dark</item>
+        <item name="android:textAppearanceListItem">@style/TextAppearance.CSploit.PreferenceTitleDark</item>
+        <item name="textAppearanceListItem">@style/TextAppearance.CSploit.PreferenceTitleDark</item>
+        <item name="android:textAppearanceSmall">@style/TextAppearance.CSploit.PreferenceSummaryDark</item>
+    </style>
+
+    <style name="CsploitPreferenceOverlayDark" parent="PreferenceThemeOverlay">
+        <item name="preferenceCategoryTitleTextColor">@color/settings_text_primary_dark</item>
+    </style>
+
+    <style name="TextAppearance.CSploit.PreferenceTitleDark" parent="TextAppearance.AppCompat.Subhead">
+        <item name="android:textColor">@color/settings_text_primary_dark</item>
+    </style>
+
+    <style name="TextAppearance.CSploit.PreferenceSummaryDark" parent="TextAppearance.AppCompat.Caption">
+        <item name="android:textColor">@color/settings_text_secondary_dark</item>
+    </style>
+
+    <style name="PrefsThemeDark.Main" parent="PrefsThemeDark">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:enforceStatusBarContrast">true</item>
+        <item name="android:enforceNavigationBarContrast">true</item>
     </style>
 
     <style name="Theme.CSploitActionBarStyle" parent="@style/Widget.AppCompat.Light.ActionBar.Solid">

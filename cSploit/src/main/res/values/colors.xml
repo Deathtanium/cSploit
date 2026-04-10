@@ -20,6 +20,8 @@
     <color name="purple">#3F51B5</color>
     <color name="orange">#FFC107</color>
     <color name="black">#000000</color>
+    <color name="settings_text_primary_dark">#FFFFFFFF</color>
+    <color name="settings_text_secondary_dark">#FFFFFFFF</color>
     <color name="blue">#0000FF</color>
     <color name="msf_rank_manual">@color/red</color>
     <color name="msf_rank_low">#FF7F50</color>

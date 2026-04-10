@@ -36,7 +36,7 @@
         android:layout_below="@+id/itemTitle"
         android:layout_toLeftOf="@+id/portCountLayout"
         android:fontFamily="sans-serif-condensed"
-        android:textColor="@color/gray_text"
+        android:textColor="?android:attr/textColorSecondary"
         android:textSize="14sp" />
 
     <LinearLayout
@@ -64,7 +64,7 @@
             android:layout_row="0"
             android:gravity="top|center_horizontal"
             android:text="@string/ports"
-            android:textColor="@color/primary_material_light"
+            android:textColor="@android:color/white"
             android:textSize="12dp"
             android:textStyle="bold" />
 
@@ -76,7 +76,7 @@
             android:layout_row="0"
             android:gravity="top|center_horizontal"
             android:text="22"
-            android:textColor="@color/background_window"
+            android:textColor="@android:color/white"
             android:textSize="16dp" />
 
 

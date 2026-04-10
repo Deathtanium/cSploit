@@ -35,6 +35,6 @@
         android:padding="6dp"
         android:text="@string/select_target"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="@color/gray_text" />
+        android:textColor="?android:attr/textColorSecondary" />
 
 </RelativeLayout>

@@ -98,6 +98,7 @@ public class LoginCracker extends Plugin {
   private String mPassWordlist = null;
   private boolean mRunning = false;
   private boolean mAccountFound = false;
+  private boolean mDarkTheme = false;
   private AttemptReceiver mReceiver = null;
   private String mCustomCharset = null;
 
@@ -143,7 +144,7 @@ public class LoginCracker extends Plugin {
         mProgressBar.setProgress(0);
         mStartButton.setImageDrawable(ContextCompat.getDrawable(getBaseContext(), R.drawable.ic_play_arrow_24dp));
         if (!mAccountFound) {
-          mStatusText.setTextColor(Color.DKGRAY);
+          mStatusText.setTextColor(mDarkTheme ? Color.WHITE : Color.DKGRAY);
           mStatusText.setText(getString(R.string.stopped_dots));
         }
       }
@@ -173,7 +174,7 @@ public class LoginCracker extends Plugin {
                               mUserWordlist, mPassWordlist, mReceiver);
 
       mActivity.setVisibility(View.VISIBLE);
-      mStatusText.setTextColor(Color.DKGRAY);
+      mStatusText.setTextColor(mDarkTheme ? Color.WHITE : Color.DKGRAY);
       mStatusText.setText(getString(R.string.starting_dots));
       mRunning = true;
 
@@ -186,8 +187,8 @@ public class LoginCracker extends Plugin {
 
   public void onCreate(Bundle savedInstanceState) {
     SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
-    Boolean isDark = themePrefs.getBoolean("isDark", false);
-    if (isDark)
+    mDarkTheme = themePrefs.getBoolean("isDark", false);
+    if (mDarkTheme)
       setTheme(R.style.DarkTheme);
     else
       setTheme(R.style.AppTheme);
@@ -526,11 +527,6 @@ public class LoginCracker extends Plugin {
         holder.textView = (TextView) (spinView != null ? spinView
                 .findViewById(android.R.id.text1) : null);
 
-        holder.protocol = mProtocols.get(position);
-
-        if (holder.textView != null)
-          holder.textView.setText(holder.protocol);
-
         if(spinView != null)
           spinView.setTag(holder);
 
@@ -538,9 +534,16 @@ public class LoginCracker extends Plugin {
         holder = (Holder) spinView.getTag();
       }
 
-      if (hasProtocolOpenPort(holder.protocol) && holder.textView != null) {
-        holder.textView.setTextColor(Color.GREEN);
-        holder.textView.setTypeface(null, Typeface.BOLD);
+      holder.protocol = mProtocols.get(position);
+      if (holder.textView != null) {
+        holder.textView.setText(holder.protocol);
+        if (hasProtocolOpenPort(holder.protocol)) {
+          holder.textView.setTextColor(Color.GREEN);
+          holder.textView.setTypeface(null, Typeface.BOLD);
+        } else {
+          holder.textView.setTextColor(mDarkTheme ? Color.WHITE : Color.DKGRAY);
+          holder.textView.setTypeface(null, Typeface.NORMAL);
+        }
       }
 
       return spinView;
@@ -614,7 +617,7 @@ public class LoginCracker extends Plugin {
       LoginCracker.this.runOnUiThread(new Runnable() {
         @Override
         public void run() {
-          mStatusText.setTextColor(Color.DKGRAY);
+          mStatusText.setTextColor(mDarkTheme ? Color.WHITE : Color.DKGRAY);
           mStatusText.setText(text);
           mProgressBar.setProgress(percentage);
         }

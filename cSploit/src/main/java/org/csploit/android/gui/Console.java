@@ -19,6 +19,8 @@ import android.widget.Toast;
 
 import org.csploit.android.R;
 import org.csploit.android.core.System;
+import org.csploit.android.helpers.MainLayoutHelper;
+import org.csploit.android.helpers.ToastHelper;
 import org.csploit.android.gui.dialogs.FatalDialog;
 import org.csploit.android.net.metasploit.ShellSession;
 
@@ -49,7 +51,7 @@ public class Console extends AppCompatActivity {
         @Override
         public void onEnd(int exitCode) {
             if (exitCode != 0)
-                Toast.makeText(Console.this, "command returned " + exitCode, Toast.LENGTH_SHORT).show();
+                ToastHelper.show(Console.this, "command returned " + exitCode, Toast.LENGTH_SHORT);
             try {
                 Thread.sleep(200);
                 Console.this.runOnUiThread(new Runnable() {
@@ -81,6 +83,7 @@ public class Console extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.console_layout);
+        MainLayoutHelper.installInsetsForActivity(this);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mInput = (EditText) findViewById(R.id.input);
